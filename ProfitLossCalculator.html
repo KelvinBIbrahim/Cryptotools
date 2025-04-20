@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profit/Loss Calculator</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --profit-color: #28a745;
+            --loss-color: #dc3545;
+            --neutral-color: #6c757d;
+            --background-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 500px;
+            padding: 2rem;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #3a5a84;
+        }
+
+        .result-container {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #f8f9fa;
+            text-align: center;
+            display: none;
+        }
+
+        .result-container.visible {
+            display: block;
+        }
+
+        .result-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-amount {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .profit {
+            color: var(--profit-color);
+        }
+
+        .loss {
+            color: var(--loss-color);
+        }
+
+        .neutral {
+            color: var(--neutral-color);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Profit/Loss Calculator</h1>
+        <form id="calc-form">
+            <div class="form-group">
+                <label for="buy-price">Buy Price ($)</label>
+                <input type="number" id="buy-price" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="sell-price">Sell Price ($)</label>
+                <input type="number" id="sell-price" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="amount">Amount (Units)</label>
+                <input type="number" id="amount" step="0.01" min="0" required>
+            </div>
+            <button type="submit">Calculate</button>
+        </form>
+        
+        <div class="result-container" id="result-container">
+            <p class="result-text" id="result-text">Your result will appear here</p>
+            <p class="result-amount" id="result-amount"></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('calc-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get input values
+            const buyPrice = parseFloat(document.getElementById('buy-price').value);
+            const sellPrice = parseFloat(document.getElementById('sell-price').value);
+            const amount = parseFloat(document.getElementById('amount').value);
+            
+            // Calculate profit/loss
+            const difference = (sellPrice - buyPrice) * amount;
+            const resultContainer = document.getElementById('result-container');
+            const resultText = document.getElementById('result-text');
+            const resultAmount = document.getElementById('result-amount');
+            
+            // Reset classes
+            resultAmount.classList.remove('profit', 'loss', 'neutral');
+            
+            // Format the currency
+            const formatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            });
+            
+            // Set the result based on calculation
+            if (difference > 0) {
+                resultText.textContent = 'Profit';
+                resultAmount.textContent = formatter.format(difference);
+                resultAmount.classList.add('profit');
+            } else if (difference < 0) {
+                resultText.textContent = 'Loss';
+                resultAmount.textContent = formatter.format(Math.abs(difference));
+                resultAmount.classList.add('loss');
+            } else {
+                resultText.textContent = 'No Gain/Loss';
+                resultAmount.textContent = formatter.format(0);
+                resultAmount.classList.add('neutral');
+            }
+            
+            // Show the result container
+            resultContainer.classList.add('visible');
+        });
+    </script>
+</body>
+</html>

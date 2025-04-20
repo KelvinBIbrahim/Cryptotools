@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Arbitrage Checker</title>
+  <style>
+    :root {
+      --primary-color: #2a2a72;
+      --secondary-color: #009ffd;
+      --dark-bg: #1a1a2e;
+      --card-bg: #16213e;
+      --text-color: #e6e6e6;
+      --success-color: #4caf50;
+      --warning-color: #ff9800;
+      --danger-color: #f44336;
+      --border-radius: 10px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--dark-bg);
+      color: var(--text-color);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: var(--secondary-color);
+    }
+
+    .description {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    select, button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--border-radius);
+      background-color: var(--primary-color);
+      color: var(--text-color);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    select {
+      flex-grow: 1;
+      max-width: 300px;
+    }
+
+    button {
+      background-color: var(--secondary-color);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: var(--text-color);
+      animation: spin 1s ease-in-out infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .exchange-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .price {
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-align: center;
+      color: var(--secondary-color);
+    }
+
+    .price-details {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .arbitrage-card {
+      background: linear-gradient(145deg, var(--card-bg), var(--primary-color));
+      text-align: center;
+    }
+
+    .arbitrage-amount {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .arbitrage-percentage {
+      font-size: 1.2rem;
+      margin-top: 10px;
+    }
+
+    .arbitrage-direction {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: var(--border-radius);
+      padding: 10px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .higher {
+      color: var(--success-color);
+    }
+
+    .lower {
+      color: var(--danger-color);
+    }
+
+    .opportunity {
+      color: var(--warning-color);
+    }
+
+    .no-opportunity {
+      opacity: 0.7;
+    }
+
+    .last-updated {
+      text-align: center;
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 20px;
+    }
+
+    .error-message {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: var(--danger-color);
+      padding: 10px;
+      border-radius: var(--border-radius);
+      margin-bottom: 20px;
+      text-align: center;
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .controls {
+        flex-direction: column;
+      }
+      
+      select, button {
+        width: 100%;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Crypto Arbitrage Checker</h1>
+      <p class="description">Check real-time prices across exchanges and find arbitrage opportunities</p>
+    </header>
+
+    <div class="error-message" id="error-message"></div>
+
+    <div class="controls">
+      <select id="cryptocurrency-select">
+        <option value="BTC">Bitcoin (BTC)</option>
+        <option value="ETH">Ethereum (ETH)</option>
+        <option value="SOL">Solana (SOL)</option>
+        <option value="XRP">Ripple (XRP)</option>
+        <option value="ADA">Cardano (ADA)</option>
+        <option value="DOT">Polkadot (DOT)</option>
+        <option value="DOGE">Dogecoin (DOGE)</option>
+        <option value="LINK">Chainlink (LINK)</option>
+      </select>
+      <button id="refresh-button">
+        <span>Refresh Prices</span>
+        <span class="loading-spinner" id="loading-spinner"></span>
+      </button>
+    </div>
+
+    <div class="cards">
+      <div class="card" id="binance-card">
+        <div class="card-header">
+          <span class="exchange-name">Binance</span>
+          <img src="/api/placeholder/24/24" alt="Binance Logo" />
+        </div>
+        <div class="price" id="binance-price">---.--</div>
+        <div class="price-details">
+          <span>24h High: <span id="binance-high">---.--</span></span>
+          <span>24h Low: <span id="binance-low">---.--</span></span>
+        </div>
+      </div>
+
+      <div class="card" id="coinbase-card">
+        <div class="card-header">
+          <span class="exchange-name">Coinbase</span>
+          <img src="/api/placeholder/24/24" alt="Coinbase Logo" />
+        </div>
+        <div class="price" id="coinbase-price">---.--</div>
+        <div class="price-details">
+          <span>24h High: <span id="coinbase-high">---.--</span></span>
+          <span>24h Low: <span id="coinbase-low">---.--</span></span>
+        </div>
+      </div>
+
+      <div class="card arbitrage-card" id="arbitrage-card">
+        <h3>Price Difference</h3>
+        <div class="arbitrage-amount" id="arbitrage-amount">$0.00</div>
+        <div class="arbitrage-percentage" id="arbitrage-percentage">0.00%</div>
+        <div class="arbitrage-direction" id="arbitrage-direction">No significant difference</div>
+      </div>
+    </div>
+
+    <p class="last-updated">Last updated: <span id="last-updated">Never</span></p>
+  </div>
+
+  <script>
+    // DOM Elements
+    const cryptocurrencySelect = document.getElementById('cryptocurrency-select');
+    const refreshButton = document.getElementById('refresh-button');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const errorMessage = document.getElementById('error-message');
+    const lastUpdated = document.getElementById('last-updated');
+    
+    // Price display elements
+    const binancePrice = document.getElementById('binance-price');
+    const binanceHigh = document.getElementById('binance-high');
+    const binanceLow = document.getElementById('binance-low');
+    const coinbasePrice = document.getElementById('coinbase-price');
+    const coinbaseHigh = document.getElementById('coinbase-high');
+    const coinbaseLow = document.getElementById('coinbase-low');
+    
+    // Arbitrage elements
+    const arbitrageAmount = document.getElementById('arbitrage-amount');
+    const arbitragePercentage = document.getElementById('arbitrage-percentage');
+    const arbitrageDirection = document.getElementById('arbitrage-direction');
+
+    // API endpoints
+    const BINANCE_API = 'https://api.binance.com/api/v3/ticker/24hr?symbol=';
+    const COINBASE_API = 'https://api.coinbase.com/v2/prices/';
+
+    // State variables
+    let isLoading = false;
+    let priceData = {
+      binance: null,
+      coinbase: null
+    };
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+      refreshPrices();
+      
+      // Event listeners
+      cryptocurrencySelect.addEventListener('change', refreshPrices);
+      refreshButton.addEventListener('click', refreshPrices);
+    });
+
+    // Fetch prices from exchanges
+    async function refreshPrices() {
+      if (isLoading) return;
+      
+      setLoading(true);
+      clearErrorMessage();
+      
+      const selectedCrypto = cryptocurrencySelect.value;
+      
+      try {
+        // Fetch from both exchanges in parallel
+        const [binanceData, coinbaseData] = await Promise.all([
+          fetchBinancePrice(selectedCrypto),
+          fetchCoinbasePrice(selectedCrypto)
+        ]);
+        
+        // Update the state
+        priceData.binance = binanceData;
+        priceData.coinbase = coinbaseData;
+        
+        // Update the UI
+        updatePriceDisplay();
+        calculateArbitrage();
+        updateLastUpdated();
+      } catch (error) {
+        showErrorMessage(`Failed to fetch prices: ${error.message}`);
+        console.error('Error fetching prices:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Fetch price from Binance
+    async function fetchBinancePrice(crypto) {
+      const symbol = `${crypto}USDT`;
+      const response = await fetch(`${BINANCE_API}${symbol}`);
+      
+      if (!response.ok) {
+        throw new Error(`Binance API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      return {
+        price: parseFloat(data.lastPrice),
+        high: parseFloat(data.highPrice),
+        low: parseFloat(data.lowPrice)
+      };
+    }
+
+    // Fetch price from Coinbase
+    async function fetchCoinbasePrice(crypto) {
+      const spotPriceUrl = `${COINBASE_API}${crypto}-USD/spot`;
+      const response = await fetch(spotPriceUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Coinbase API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const price = parseFloat(data.data.amount);
+      
+      // For simplicity, we're using spot price +/- 2% for high/low since
+      // Coinbase API doesn't provide 24h high/low in a simple endpoint
+      return {
+        price: price,
+        high: price * 1.02, // Approximation
+        low: price * 0.98   // Approximation
+      };
+    }
+
+    // Update price display
+    function updatePriceDisplay() {
+      if (!priceData.binance || !priceData.coinbase) return;
+      
+      // Format values
+      const formatPrice = (price) => `$${price.toFixed(2)}`;
+      
+      // Update Binance display
+      binancePrice.textContent = formatPrice(priceData.binance.price);
+      binanceHigh.textContent = formatPrice(priceData.binance.high);
+      binanceLow.textContent = formatPrice(priceData.binance.low);
+      
+      // Update Coinbase display
+      coinbasePrice.textContent = formatPrice(priceData.coinbase.price);
+      coinbaseHigh.textContent = formatPrice(priceData.coinbase.high);
+      coinbaseLow.textContent = formatPrice(priceData.coinbase.low);
+      
+      // Highlight higher/lower prices
+      if (priceData.binance.price > priceData.coinbase.price) {
+        binancePrice.classList.add('higher');
+        binancePrice.classList.remove('lower');
+        coinbasePrice.classList.add('lower');
+        coinbasePrice.classList.remove('higher');
+      } else if (priceData.binance.price < priceData.coinbase.price) {
+        binancePrice.classList.add('lower');
+        binancePrice.classList.remove('higher');
+        coinbasePrice.classList.add('higher');
+        coinbasePrice.classList.remove('lower');
+      } else {
+        binancePrice.classList.remove('higher', 'lower');
+        coinbasePrice.classList.remove('higher', 'lower');
+      }
+    }
+
+    // Calculate arbitrage opportunity
+    function calculateArbitrage() {
+      if (!priceData.binance || !priceData.coinbase) return;
+      
+      const binancePrice = priceData.binance.price;
+      const coinbasePrice = priceData.coinbase.price;
+      
+      // Calculate difference and percentage
+      const priceDifference = Math.abs(binancePrice - coinbasePrice);
+      const percentageDifference = (priceDifference / Math.min(binancePrice, coinbasePrice)) * 100;
+      
+      // Update arbitrage display
+      arbitrageAmount.textContent = `$${priceDifference.toFixed(2)}`;
+      arbitragePercentage.textContent = `${percentageDifference.toFixed(2)}%`;
+      
+      // Determine direction and opportunity
+      const arbitrageCard = document.getElementById('arbitrage-card');
+      
+      if (percentageDifference >= 1.0) {
+        // Significant arbitrage opportunity (1% or more)
+        arbitrageCard.classList.add('opportunity');
+        arbitrageCard.classList.remove('no-opportunity');
+        
+        if (binancePrice > coinbasePrice) {
+          arbitrageDirection.textContent = `Buy on Coinbase, Sell on Binance`;
+        } else {
+          arbitrageDirection.textContent = `Buy on Binance, Sell on Coinbase`;
+        }
+        
+        arbitrageAmount.classList.add('opportunity');
+        arbitragePercentage.classList.add('opportunity');
+      } else {
+        // No significant opportunity
+        arbitrageCard.classList.remove('opportunity');
+        arbitrageCard.classList.add('no-opportunity');
+        arbitrageDirection.textContent = `No significant arbitrage opportunity`;
+        arbitrageAmount.classList.remove('opportunity');
+        arbitragePercentage.classList.remove('opportunity');
+      }
+    }
+
+    // Helper functions
+    function setLoading(loading) {
+      isLoading = loading;
+      loadingSpinner.style.display = loading ? 'inline-block' : 'none';
+      refreshButton.disabled = loading;
+    }
+
+    function showErrorMessage(message) {
+      errorMessage.textContent = message;
+      errorMessage.style.display = 'block';
+    }
+
+    function clearErrorMessage() {
+      errorMessage.style.display = 'none';
+    }
+
+    function updateLastUpdated() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      lastUpdated.textContent = timeString;
+    }
+  </script>
+</body>
+</html>

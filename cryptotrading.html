@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CryptoTrader Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-light: #f8fafc;
+      --text-secondary: #94a3b8;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      margin: 0;
+      background: var(--bg-dark);
+      color: var(--text-light);
+      line-height: 1.6;
+    }
+    header {
+      background-color: var(--card-bg);
+      padding: 1em;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .logo {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+    }
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .sidebar {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 20px;
+      height: fit-content;
+    }
+    .stats-card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .stat-box {
+      flex: 1;
+      min-width: 150px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .stat-label {
+      font-size: 0.9em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 1.4em;
+      font-weight: bold;
+    }
+    .controls, .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      min-width: 150px;
+    }
+    label {
+      font-size: 0.9em;
+      color: var(--text-secondary);
+    }
+    select, input, button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    select, input {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-light);
+      width: 100%;
+    }
+    button {
+      background-color: var(--primary);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 120px;
+    }
+    button:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      background-color: #4f46e580;
+      cursor: not-allowed;
+    }
+    .btn-success {
+      background-color: var(--success);
+    }
+    .btn-success:hover {
+      background-color: #0ca678;
+    }
+    .btn-danger {
+      background-color: var(--error);
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    .btn-warning {
+      background-color: var(--warning);
+    }
+    .btn-warning:hover {
+      background-color: #d97706;
+    }
+    .chart {
+      width: 100%;
+      height: 500px;
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .profit-loss {
+      padding: 15px;
+      border-radius: 6px;
+      font-weight: bold;
+      text-align: center;
+      margin: 15px 0;
+    }
+    .profit { 
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--success); 
+    }
+    .loss { 
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--error); 
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    th {
+      background-color: rgba(255, 255, 255, 0.05);
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    tr:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: 600;
+    }
+    .badge-success {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+    }
+    .badge-danger {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+    }
+    .badge-warning {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+    }
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 6px;
+      background-color: var(--card-bg);
+      color: var(--text-light);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: var(--card-bg);
+      padding: 25px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    .modal-body {
+      margin-bottom: 20px;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .price-movement {
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      gap: 5px;
+    }
+    .price-up {
+      color: var(--success);
+    }
+    .price-down {
+      color: var(--error);
+    }
+    .market-list {
+      margin-top: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .market-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .market-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .market-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Mobile responsiveness */
+    @media (max-width: 1024px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        order: -1;
+      }
+    }
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .stats-card {
+        flex-direction: column;
+      }
+      .stat-box {
+        width: 100%;
+      }
+      .controls, .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .form-group {
+        width: 100%;
+      }
+      button {
+        width: 100%;
+      }
+      .chart {
+        height: 300px;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+      .notification {
+        width: 90%;
+        right: 5%;
+        left: 5%;
+      }
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+      }
+      .logo {
+        font-size: 1.2em;
+      }
+      th, td {
+        padding: 8px;
+        font-size: 0.9em;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="notification" class="notification"></div>
+<header>
+  <div class="logo">CFT TRADING</div>
+  <div class="price-movement" id="price-ticker">
+    <div class="spinner"></div> Loading...
+  </div>
+</header>
+<div class="container">
+  <div class="stats-card">
+    <div class="stat-box">
+      <div class="stat-label">Balance</div>
+      <div class="stat-value">$<span id="balance">20000.00</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Profit/Loss Today</div>
+      <div class="stat-value" id="daily-pnl">$0.00</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Total Trades</div>
+      <div class="stat-value" id="total-trades">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Win Rate</div>
+      <div class="stat-value" id="win-rate">0%</div>
+    </div>
+  </div>
+  <div class="dashboard">
+    <div class="main-content">
+      <div class="controls">
+        <div class="form-group">
+          <label for="crypto-select">Choose Asset:</label>
+          <select id="crypto-select">
+            <option value="bitcoin">Bitcoin (BTC)</option>
+            <option value="ethereum">Ethereum (ETH)</option>
+            <option value="binancecoin">Binance Coin (BNB)</option>
+            <option value="ripple">Ripple (XRP)</option>
+            <option value="solana">Solana (SOL)</option>
+            <option value="avalanche-2">Avalanche (AVAX)</option>
+            <option value="dogecoin">Dogecoin (DOGE)</option>
+            <option value="cardano">Cardano (ADA)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="timeframe-select">Timeframe:</label>
+          <select id="timeframe-select">
+            <option value="1">1 Minute</option>
+            <option value="5">5 Minutes</option>
+            <option value="15">15 Minutes</option>
+            <option value="60">1 Hour</option>
+            <option value="D">Daily</option>
+          </select>
+        </div>
+        <button onclick="showDepositModal()">Deposit</button>
+        <button onclick="showWithdrawModal()">Withdraw</button>
+      </div>
+      <div class="chart" id="tradingview-widget-container"></div>
+      <div id="profit-loss" class="profit-loss" style="display: none;"></div>
+      <div class="actions">
+        <div class="form-group">
+          <label for="trade-amount">Stake Amount (min $1)</label>
+          <input type="number" placeholder="Enter amount" id="trade-amount" min="1">
+        </div>
+        <div class="form-group">
+          <label for="trade-duration">Duration (seconds)</label>
+          <select id="trade-duration">
+            <option value="5">5 seconds</option>
+            <option value="10">10 seconds</option>
+            <option value="30">30 seconds</option>
+            <option value="60">60 seconds</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="position-type">Position</label>
+          <select id="position-type">
+            <option value="long">Long (Buy)</option>
+            <option value="short">Short (Sell)</option>
+          </select>
+        </div>
+        <button id="open-position-btn" class="btn-success" onclick="openPosition()">Open Position</button>
+        <button id="close-position-btn" class="btn-danger" onclick="closePosition()" disabled>Close Position</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Asset</th>
+            <th>Type</th>
+            <th>Stake</th>
+            <th>Result</th>
+            <th>Duration</th>
+            <th>Status</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="history-table">
+          <!-- History rows go here -->
+        </tbody>
+      </table>
+    </div>
+    <div class="sidebar">
+      <h2>Market Overview</h2>
+      <div id="market-overview" class="market-list">
+        <div class="spinner"></div> Loading market data...
+      </div>
+      <h2 style="margin-top: 20px;">Portfolio</h2>
+      <div id="portfolio">
+        <div class="stat-box">
+          <div class="stat-label">Active Position</div>
+          <div class="stat-value" id="active-position">None</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Current Stake</div>
+          <div class="stat-value" id="current-stake">$0.00</div>
+        </div>
+      </div>
+      <h2 style="margin-top: 20px;">Trading Timer</h2>
+      <div class="stat-box">
+        <div class="stat-label">Time Remaining</div>
+        <div class="stat-value" id="timer">0s</div>
+      </div>
+      <h2 style="margin-top: 20px;">Trading Tips</h2>
+      <ul style="margin-left: 20px; color: var(--text-secondary);">
+        <li>Use smaller stakes when learning</li>
+        <li>Don't chase losses with bigger positions</li>
+        <li>Set a daily profit/loss limit</li>
+        <li>Practice before using real money</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<!-- Deposit Modal -->
+<div id="deposit-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Deposit Funds</div>
+      <button class="close-btn" onclick="closeModal('deposit-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="deposit-amount">Amount to Deposit ($)</label>
+        <input type="number" id="deposit-amount" min="10" placeholder="Enter amount">
+      </div>
+      <div class="form-group">
+        <label for="deposit-method">Payment Method</label>
+        <select id="deposit-method">
+          <option value="credit">Credit Card</option>
+          <option value="bank">Bank Transfer</option>
+          <option value="crypto">Cryptocurrency</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('deposit-modal')">Cancel</button>
+      <button class="btn-success" onclick="processDeposit()">Deposit</button>
+    </div>
+  </div>
+</div>
+<!-- Withdraw Modal -->
+<div id="withdraw-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Withdraw Funds</div>
+      <button class="close-btn" onclick="closeModal('withdraw-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="withdraw-amount">Amount to Withdraw ($)</label>
+        <input type="number" id="withdraw-amount" min="10" placeholder="Enter amount">
+      </div>
+      <div class="form-group">
+        <label for="withdraw-method">Withdraw Method</label>
+        <select id="withdraw-method">
+          <option value="bank">Bank Account</option>
+          <option value="crypto">Cryptocurrency</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('withdraw-modal')">Cancel</button>
+      <button class="btn-success" onclick="processWithdraw()">Withdraw</button>
+    </div>
+  </div>
+</div>
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+  // Global variables
+  let selectedSymbol = document.getElementById("crypto-select").value;
+  let selectedTimeframe = document.getElementById("timeframe-select").value;
+  let chartWidget;
+  let balance = 20000;
+  let currentStake = 0;
+  let positionActive = false;
+  let profitOrLoss = 0;
+  let tradeId = 1;
+  let timerInterval = null;
+  let secondsLeft = 0;
+  let totalTrades = 0;
+  let winningTrades = 0;
+  let dailyPnL = 0;
+  let currentPositionType = "";
+  let cryptoData = {};
+  let marketUpdateInterval;
+  // Cache for CoinGecko API data
+  let coinGeckoCache = {
+    timestamp: 0,
+    data: null
+  };
+  // DOM elements
+  const balanceDisplay = document.getElementById("balance");
+  const profitLossDisplay = document.getElementById("profit-loss");
+  const timerDisplay = document.getElementById("timer");
+  const dailyPnLDisplay = document.getElementById("daily-pnl");
+  const totalTradesDisplay = document.getElementById("total-trades");
+  const winRateDisplay = document.getElementById("win-rate");
+  const activePositionDisplay = document.getElementById("active-position");
+  const currentStakeDisplay = document.getElementById("current-stake");
+  const marketOverviewDisplay = document.getElementById("market-overview");
+  const openPositionBtn = document.getElementById("open-position-btn");
+  const closePositionBtn = document.getElementById("close-position-btn");
+  const priceTicker = document.getElementById("price-ticker");
+
+  // Initialize application
+  document.addEventListener("DOMContentLoaded", function() {
+    fetchCryptoData();
+    loadChart();
+    // Event listeners for change handlers
+    document.getElementById("crypto-select").addEventListener("change", function() {
+      selectedSymbol = this.value;
+      updatePriceTicker();
+      loadChart();
+    });
+    document.getElementById("timeframe-select").addEventListener("change", function() {
+      selectedTimeframe = this.value;
+      loadChart();
+    });
+  });
+
+  // CoinGecko API Functions
+  async function fetchCryptoData() {
+    try {
+      // Check if we have cached data less than 1 minute old
+      const now = Date.now();
+      if (coinGeckoCache.data && now - coinGeckoCache.timestamp < 60000) {
+        processMarketData(coinGeckoCache.data);
+        return;
+      }
+      showNotification("Fetching latest market data...", "info");
+      // Make API request to CoinGecko (free tier)
+      const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h');
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+      const data = await response.json();
+      // Cache the data
+      coinGeckoCache.data = data;
+      coinGeckoCache.timestamp = now;
+      processMarketData(data);
+    } catch (error) {
+      console.error("Error fetching crypto data:", error);
+      showNotification("Failed to fetch market data. Using fallback data.", "warning");
+      useFallbackData();
+    }
+  }
+
+  function processMarketData(data) {
+    // Store the data globally
+    cryptoData = {};
+    data.forEach(coin => {
+      cryptoData[coin.id] = {
+        name: coin.name,
+        symbol: coin.symbol.toUpperCase(),
+        price: coin.current_price,
+        priceChange24h: coin.price_change_percentage_24h,
+        image: coin.image
+      };
+    });
+    // Update the UI
+    updateMarketOverview();
+    updatePriceTicker();
+    // Set interval to refresh data
+    if (marketUpdateInterval) clearInterval(marketUpdateInterval);
+    marketUpdateInterval = setInterval(fetchCryptoData, 60000); // Refresh every minute (CoinGecko free tier limit)
+  }
+
+  function useFallbackData() {
+    // Fallback data if API fails
+    cryptoData = {
+      "bitcoin": { name: "Bitcoin", symbol: "BTC", price: 64850, priceChange24h: 1.2, image: "https://assets.coingecko.com/coins/images/1/small/bitcoin.png" },
+      "ethereum": { name: "Ethereum", symbol: "ETH", price: 3120, priceChange24h: 0.8, image: "https://assets.coingecko.com/coins/images/279/small/ethereum.png" },
+      "binancecoin": { name: "Binance Coin", symbol: "BNB", price: 580, priceChange24h: -0.5, image: "https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png" },
+      "ripple": { name: "XRP", symbol: "XRP", price: 0.65, priceChange24h: -1.2, image: "https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png" },
+      "solana": { name: "Solana", symbol: "SOL", price: 150, priceChange24h: 2.5, image: "https://assets.coingecko.com/coins/images/4128/small/solana.png" },
+      "avalanche-2": { name: "Avalanche", symbol: "AVAX", price: 35, priceChange24h: 1.5, image: "https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png" },
+      "dogecoin": { name: "Dogecoin", symbol: "DOGE", price: 0.12, priceChange24h: -0.7, image: "https://assets.coingecko.com/coins/images/5/small/dogecoin.png" },
+      "cardano": { name: "Cardano", symbol: "ADA", price: 0.45, priceChange24h: 0.3, image: "https://assets.coingecko.com/coins/images/975/small/cardano.png" }
+    };
+    updateMarketOverview();
+    updatePriceTicker();
+  }
+
+  function updateMarketOverview() {
+    let html = '';
+    // Get the crypto data sorted by price change
+    const sortedCoins = Object.keys(cryptoData)
+      .map(id => ({ id, ...cryptoData[id] }))
+      .sort((a, b) => b.priceChange24h - a.priceChange24h);
+    sortedCoins.forEach(coin => {
+      const priceChangeClass = coin.priceChange24h >= 0 ? 'price-up' : 'price-down';
+      const changeSymbol = coin.priceChange24h >= 0 ? '▲' : '▼';
+      html += `
+        <div class="market-item">
+          <div class="market-name">
+            <img src="${coin.image}" alt="${coin.symbol}" class="market-icon">
+            ${coin.symbol}
+          </div>
+          <div>
+            $${formatPrice(coin.price)}
+            <span class="${priceChangeClass}">
+              ${changeSymbol} ${Math.abs(coin.priceChange24h).toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      `;
+    });
+    marketOverviewDisplay.innerHTML = html;
+  }
+
+  function formatPrice(price) {
+    // Format price based on its magnitude
+    if (price >= 1000) return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (price >= 1) return price.toFixed(2);
+    if (price >= 0.001) return price.toFixed(4);
+    return price.toFixed(6);
+  }
+
+  // Helper functions
+  function updateBalance() {
+    balanceDisplay.textContent = balance.toFixed(2);
+  }
+
+  function showProfitLoss(text, isProfit = true) {
+    profitLossDisplay.style.display = "block";
+    profitLossDisplay.textContent = text;
+    profitLossDisplay.className = isProfit ? "profit-loss profit" : "profit-loss loss";
+  }
+
+  function updateStats() {
+    dailyPnLDisplay.textContent = `$${dailyPnL.toFixed(2)}`;
+    dailyPnLDisplay.style.color = dailyPnL >= 0 ? "var(--success)" : "var(--error)";
+    totalTradesDisplay.textContent = totalTrades;
+    const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100).toFixed(1) : "0";
+    winRateDisplay.textContent = `${winRate}%`;
+    currentStakeDisplay.textContent = positionActive ? `$${currentStake.toFixed(2)}` : "$0.00";
+    if (positionActive && cryptoData[selectedSymbol]) {
+      activePositionDisplay.textContent = 
+        `${currentPositionType === "long" ? "Long" : "Short"} ${cryptoData[selectedSymbol].symbol}`;
+    } else {
+      activePositionDisplay.textContent = "None";
+    }
+  }
+
+  function showNotification(message, type = "info") {
+    const notification = document.getElementById("notification");
+    notification.textContent = message;
+    notification.style.display = "block";
+    if (type === "success") {
+      notification.style.backgroundColor = "var(--success)";
+    } else if (type === "error") {
+      notification.style.backgroundColor = "var(--error)";
+    } else if (type === "warning") {
+      notification.style.backgroundColor = "var(--warning)";
+    } else {
+      notification.style.backgroundColor = "var(--primary)";
+    }
+    setTimeout(() => {
+      notification.style.display = "none";
+    }, 3000);
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).style.display = "none";
+  }
+
+  function showDepositModal() {
+    document.getElementById("deposit-modal").style.display = "flex";
+  }
+
+  function showWithdrawModal() {
+    document.getElementById("withdraw-modal").style.display = "flex";
+  }
+
+  function processDeposit() {
+    const amount = parseFloat(document.getElementById("deposit-amount").value);
+    const method = document.getElementById("deposit-method").value;
+
+    if (isNaN(amount) || amount < 10) {
+      showNotification("Invalid deposit amount.", "error");
+      return;
+    }
+
+    balance += amount;
+    updateBalance();
+    showNotification(`Deposited $${amount.toFixed(2)} via ${method}.`, "success");
+    closeModal("deposit-modal");
+  }
+
+  function processWithdraw() {
+    const amount = parseFloat(document.getElementById("withdraw-amount").value);
+    const method = document.getElementById("withdraw-method").value;
+
+    if (isNaN(amount) || amount < 10 || amount > balance) {
+      showNotification("Invalid withdrawal amount.", "error");
+      return;
+    }
+
+    balance -= amount;
+    updateBalance();
+    showNotification(`Withdrew $${amount.toFixed(2)} via ${method}.`, "success");
+    closeModal("withdraw-modal");
+  }
+
+  function openPosition() {
+    if (positionActive) {
+      showNotification("A position is already active.", "warning");
+      return;
+    }
+
+    const stakeAmount = parseFloat(document.getElementById("trade-amount").value);
+    const duration = parseInt(document.getElementById("trade-duration").value);
+    const positionType = document.getElementById("position-type").value;
+
+    if (isNaN(stakeAmount) || stakeAmount < 1 || stakeAmount > balance) {
+      showNotification("Invalid stake amount.", "error");
+      return;
+    }
+
+    if (!cryptoData[selectedSymbol]) {
+      showNotification("Selected asset data is unavailable.", "error");
+      return;
+    }
+
+    // Deduct stake from balance
+    balance -= stakeAmount;
+    currentStake = stakeAmount;
+    positionActive = true;
+    currentPositionType = positionType;
+
+    // Update UI
+    updateBalance();
+    updateStats();
+    showNotification(`Opened ${positionType} position on ${cryptoData[selectedSymbol].symbol}.`, "success");
+
+    // Start timer
+    secondsLeft = duration;
+    timerDisplay.textContent = `${secondsLeft}s`;
+    closePositionBtn.disabled = false;
+    openPositionBtn.disabled = true;
+
+    timerInterval = setInterval(() => {
+      secondsLeft--;
+      timerDisplay.textContent = `${secondsLeft}s`;
+
+      if (secondsLeft <= 0) {
+        clearInterval(timerInterval);
+        closePosition();
+      }
+    }, 1000);
+  }
+
+  function closePosition() {
+    if (!positionActive) {
+      showNotification("No active position to close.", "warning");
+      return;
+    }
+
+    const initialPrice = cryptoData[selectedSymbol]?.price;
+    const finalPrice = initialPrice + (Math.random() - 0.5) * 0.05 * initialPrice; // Simulate price change
+    const profitOrLoss = calculateProfitOrLoss(initialPrice, finalPrice);
+
+    // Update balance
+    balance += currentStake + profitOrLoss;
+    dailyPnL += profitOrLoss;
+
+    // Update stats
+    totalTrades++;
+    if (profitOrLoss >= 0) winningTrades++;
+
+    // Reset position
+    positionActive = false;
+    currentStake = 0;
+    currentPositionType = "";
+
+    // Update UI
+    updateBalance();
+    updateStats();
+    showNotification(
+      profitOrLoss >= 0
+        ? `Closed position with a profit of $${profitOrLoss.toFixed(2)}.`
+        : `Closed position with a loss of $${Math.abs(profitOrLoss).toFixed(2)}.`,
+      profitOrLoss >= 0 ? "success" : "error"
+    );
+
+    // Add to history table
+    addTradeToHistory(profitOrLoss);
+
+    // Reset buttons and timer
+    clearInterval(timerInterval);
+    timerDisplay.textContent = "0s";
+    closePositionBtn.disabled = true;
+    openPositionBtn.disabled = false;
+  }
+
+  function calculateProfitOrLoss(initialPrice, finalPrice) {
+    const direction = currentPositionType === "long" ? 1 : -1;
+    const percentageChange = ((finalPrice - initialPrice) / initialPrice) * direction;
+    return currentStake * (1 + percentageChange) - currentStake;
+  }
+
+  function addTradeToHistory(profitOrLoss) {
+    const tableBody = document.getElementById("history-table");
+    const row = document.createElement("tr");
+
+    const status = profitOrLoss >= 0 ? "Profit" : "Loss";
+    const statusClass = profitOrLoss >= 0 ? "badge-success" : "badge-danger";
+
+    row.innerHTML = `
+      <td>${tradeId++}</td>
+      <td>${cryptoData[selectedSymbol]?.symbol || "Unknown"}</td>
+      <td>${currentPositionType === "long" ? "Long" : "Short"}</td>
+      <td>$${currentStake.toFixed(2)}</td>
+      <td>$${profitOrLoss.toFixed(2)}</td>
+      <td>${document.getElementById("trade-duration").value}s</td>
+      <td><span class="badge ${statusClass}">${status}</span></td>
+      <td>${new Date().toLocaleTimeString()}</td>
+    `;
+
+    tableBody.prepend(row);
+  }
+
+  function updatePriceTicker() {
+    const coin = cryptoData[selectedSymbol];
+    if (coin) {
+      const priceChangeClass = coin.priceChange24h >= 0 ? "price-up" : "price-down";
+      const changeSymbol = coin.priceChange24h >= 0 ? "▲" : "▼";
+
+      priceTicker.innerHTML = `
+        <div class="${priceChangeClass}">
+          ${coin.symbol}: $${formatPrice(coin.price)} 
+          ${changeSymbol} ${Math.abs(coin.priceChange24h).toFixed(2)}%
+        </div>
+      `;
+    } else {
+      priceTicker.textContent = "Loading...";
+    }
+  }
+
+  function loadChart() {
+    if (chartWidget) {
+      chartWidget.remove();
+    }
+
+    const widgetOptions = {
+      symbol: selectedSymbol.toUpperCase(),
+      interval: selectedTimeframe,
+      container_id: "tradingview-widget-container",
+      locale: "en",
+      width: "100%",
+      height: "100%",
+      theme: "dark",
+      timezone: "Etc/UTC",
+      toolbar_bg: "#1e293b",
+      enable_publishing: false,
+      allow_symbol_change: true,
+      studies: [],
+      hide_side_toolbar: true,
+      withdateranges: true,
+      details: true,
+      hotlist: true,
+      calendar: false,
+    };
+
+    chartWidget = new TradingView.widget(widgetOptions);
+  }
+</script>
+</body>
+</html>
