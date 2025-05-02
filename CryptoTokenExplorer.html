@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Token Explorer</title>
+    <style>
+        /* CSS Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --accent-color: #00b894;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-primary: #2d3436;
+            --text-secondary: #636e72;
+            --error-color: #d63031;
+            --success-color: #00b894;
+            --border-radius: 10px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Search Form Styles */
+        .search-container {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .search-form {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+        
+        .currency-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .currency-select {
+            padding: 8px 12px;
+            border-radius: var(--border-radius);
+            border: 2px solid #dfe6e9;
+            background-color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        
+        .currency-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #dfe6e9;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2);
+        }
+
+        .search-button {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: 600;
+        }
+
+        .search-button:hover {
+            background-color: #5f52d3;
+        }
+
+        .search-notes {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+
+        /* Results Container */
+        .results-container {
+            background-color: var(--card-background);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .token-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: contain;
+            background-color: #f0f0f0;
+        }
+
+        .token-name-container {
+            flex: 1;
+        }
+
+        .token-name {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+        }
+
+        .token-symbol {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            background-color: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .token-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        /* Token Details Grid */
+        .token-details {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .token-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .detail-item {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            transition: transform 0.3s ease;
+        }
+
+        .detail-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Loading Indicator */
+        .loading-container {
+            display: none;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(108, 92, 231, 0.3);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error Message */
+        .error-message {
+            background-color: #ffebee;
+            color: var(--error-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Additional Responsive Styles */
+        @media (max-width: 600px) {
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .token-name {
+                font-size: 1.5rem;
+            }
+            
+            .token-logo {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .detail-value {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Token Explorer</div>
+        <div class="tagline">Search and explore cryptocurrency token details</div>
+    </header>
+
+    <main>
+        <div class="search-container">
+            <form class="search-form" id="searchForm">
+                <input type="text" id="tokenSearch" class="search-input" placeholder="Enter token name or symbol (e.g. bitcoin, eth)" required>
+                <div class="currency-selector">
+                    <label for="currencySelect">Display prices in:</label>
+                    <select id="currencySelect" class="currency-select">
+                        <option value="usd">USD ($)</option>
+                        <option value="eur">EUR (€)</option>
+                        <option value="gbp">GBP (£)</option>
+                        <option value="jpy">JPY (¥)</option>
+                        <option value="ngn">NGN (₦)</option>
+                        <option value="cny">CNY (¥)</option>
+                        <option value="inr">INR (₹)</option>
+                        <option value="aud">AUD ($)</option>
+                        <option value="cad">CAD ($)</option>
+                        <option value="btc">BTC (₿)</option>
+                        <option value="eth">ETH (Ξ)</option>
+                    </select>
+                </div>
+                <button type="submit" class="search-button">Search</button>
+            </form>
+            <p class="search-notes">Search by token name or symbol to view detailed information.</p>
+        </div>
+
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="results-container" id="resultsContainer">
+            <div class="results-header">
+                <img id="tokenLogo" class="token-logo" src="/api/placeholder/60/60" alt="Token logo">
+                <div class="token-name-container">
+                    <h2 id="tokenName" class="token-name">Token Name</h2>
+                    <span id="tokenSymbol" class="token-symbol">SYMBOL</span>
+                </div>
+                <div id="tokenPrice" class="token-price">$0.00</div>
+            </div>
+
+            <div class="token-details">
+                <div class="detail-item">
+                    <div class="detail-label">Market Cap</div>
+                    <div class="detail-value" id="marketCap">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">24h Trading Volume</div>
+                    <div class="detail-value" id="volume">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Circulating Supply</div>
+                    <div class="detail-value" id="circulatingSupply">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Total Supply</div>
+                    <div class="detail-value" id="totalSupply">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">All-Time High</div>
+                    <div class="detail-value" id="allTimeHigh">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Price Change (24h)</div>
+                    <div class="detail-value" id="priceChange">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Price in NGN</div>
+                    <div class="detail-value" id="priceNGN">₦0.00</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Holders (Estimated)</div>
+                    <div class="detail-value" id="holders">-</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Powered by CFS Trading Academy | Token Explorer &copy; 2025</p>
+    </footer>
+
+    <script>
+        // Cache DOM elements
+        const searchForm = document.getElementById('searchForm');
+        const tokenSearchInput = document.getElementById('tokenSearch');
+        const loadingContainer = document.getElementById('loadingContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsContainer = document.getElementById('resultsContainer');
+        
+        // Token details elements
+        const tokenLogo = document.getElementById('tokenLogo');
+        const tokenName = document.getElementById('tokenName');
+        const tokenSymbol = document.getElementById('tokenSymbol');
+        const tokenPrice = document.getElementById('tokenPrice');
+        const marketCap = document.getElementById('marketCap');
+        const volume = document.getElementById('volume');
+        const circulatingSupply = document.getElementById('circulatingSupply');
+        const totalSupply = document.getElementById('totalSupply');
+        const allTimeHigh = document.getElementById('allTimeHigh');
+        const priceChange = document.getElementById('priceChange');
+        const priceNGN = document.getElementById('priceNGN');
+        const holders = document.getElementById('holders');
+        
+        // Add event listener to the search form
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const searchTerm = tokenSearchInput.value.trim().toLowerCase();
+            
+            if (searchTerm) {
+                searchToken(searchTerm);
+            }
+        });
+        
+        /**
+         * Main function to search for a token using the CoinGecko API
+         * @param {string} query - The search term (token name or symbol)
+         */
+        async function searchToken(query) {
+            // Show loading indicator and hide previous results/errors
+            showLoading(true);
+            hideError();
+            hideResults();
+            
+            try {
+                // First, search for the token to get its ID
+                const searchResponse = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`);
+                
+                if (!searchResponse.ok) {
+                    throw new Error('Failed to search for token. Please try again later.');
+                }
+                
+                const searchData = await searchResponse.json();
+                
+                // Check if any coins were found
+                if (!searchData.coins || searchData.coins.length === 0) {
+                    throw new Error(`No tokens found matching "${query}". Please try another search term.`);
+                }
+                
+                // Get the first (most relevant) result
+                const tokenId = searchData.coins[0].id;
+                
+                // Now fetch detailed information about this token
+                const detailsResponse = await fetch(`https://api.coingecko.com/api/v3/coins/${tokenId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`);
+                
+                if (!detailsResponse.ok) {
+                    throw new Error('Failed to get token details. Please try again later.');
+                }
+                
+                const tokenDetails = await detailsResponse.json();
+                
+                // Display the token information
+                displayTokenDetails(tokenDetails);
+                
+            } catch (error) {
+                showError(error.message || 'An error occurred while fetching token data.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        /**
+         * Display token details in the UI
+         * @param {Object} token - The token data from the API
+         */
+        function displayTokenDetails(token) {
+            // Update the token header information
+            tokenLogo.src = token.image.large || '/api/placeholder/60/60';
+            tokenLogo.alt = `${token.name} logo`;
+            tokenName.textContent = token.name;
+            tokenSymbol.textContent = token.symbol.toUpperCase();
+            
+            // Format and display the price in USD
+            const usdPrice = token.market_data.current_price.usd;
+            tokenPrice.textContent = formatCurrency(usdPrice, 'USD');
+            
+            // Format and display other token details
+            marketCap.textContent = formatCurrency(token.market_data.market_cap.usd, 'USD');
+            volume.textContent = formatCurrency(token.market_data.total_volume.usd, 'USD');
+            
+            // Handle circulating and total supply (some tokens might not have this data)
+            circulatingSupply.textContent = token.market_data.circulating_supply ? 
+                formatNumber(token.market_data.circulating_supply) : 'Not available';
+                
+            totalSupply.textContent = token.market_data.total_supply ? 
+                formatNumber(token.market_data.total_supply) : 'Not available';
+            
+            // All-time high price
+            allTimeHigh.textContent = formatCurrency(token.market_data.ath.usd, 'USD');
+            
+            // 24h price change percentage with color coding
+            const priceChangePercent = token.market_data.price_change_percentage_24h;
+            priceChange.textContent = `${priceChangePercent?.toFixed(2) || 0}%`;
+            priceChange.style.color = priceChangePercent >= 0 ? 'var(--success-color)' : 'var(--error-color)';
+            
+            // Price in Nigerian Naira (NGN)
+            const ngnPrice = token.market_data.current_price.ngn;
+            priceNGN.textContent = ngnPrice ? formatCurrency(ngnPrice, 'NGN', '₦') : 'Not available';
+            
+            // Holders count (this is typically not available via the API, so we'll show a placeholder)
+            // In a real app, you might get this from another API or data source
+            const marketCapMillions = token.market_data.market_cap.usd / 1000000;
+            const estimatedHolders = Math.round(Math.sqrt(marketCapMillions) * 1000);
+            holders.textContent = `~${formatNumber(estimatedHolders)} (estimated)`;
+            
+            // Show the results container
+            showResults();
+        }
+        
+        /**
+         * Format a number as currency
+         * @param {number} value - The value to format
+         * @param {string} currency - Currency code (e.g., 'USD')
+         * @param {string} symbol - Currency symbol (optional, defaults to currency-specific)
+         * @returns {string} Formatted currency string
+         */
+        function formatCurrency(value, currency = 'USD', symbol = null) {
+            if (value === undefined || value === null) return 'Not available';
+            
+            // For very large or very small numbers, use appropriate formatting
+            if (value >= 1000000000) {
+                return `${symbol || '$'}${(value / 1000000000).toFixed(2)}B`;
+            } else if (value >= 1000000) {
+                return `${symbol || '$'}${(value / 1000000).toFixed(2)}M`;
+            } else if (value < 0.01 && value > 0) {
+                return `${symbol || '$'}${value.toFixed(6)}`;
+            } else {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: currency,
+                    maximumFractionDigits: 2,
+                    currencyDisplay: 'symbol'
+                }).format(value).replace(/USD/, symbol || '$');
+            }
+        }
+        
+        /**
+         * Format large numbers with commas
+         * @param {number} num - The number to format
+         * @returns {string} Formatted number string
+         */
+        function formatNumber(num) {
+            if (num === undefined || num === null) return 'Not available';
+            
+            return new Intl.NumberFormat('en-US').format(num);
+        }
+        
+        /**
+         * Show or hide the loading spinner
+         * @param {boolean} isLoading - Whether to show the loading spinner
+         */
+        function showLoading(isLoading) {
+            loadingContainer.style.display = isLoading ? 'flex' : 'none';
+        }
+        
+        /**
+         * Show error message
+         * @param {string} message - The error message to display
+         */
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+        
+        /**
+         * Hide error message
+         */
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+        
+        /**
+         * Show results container
+         */
+        function showResults() {
+            resultsContainer.style.display = 'block';
+        }
+        
+        /**
+         * Hide results container
+         */
+        function hideResults() {
+            resultsContainer.style.display = 'none';
+        }
+        
+        // Initialize the app with a popular token search if you want
+        // Uncomment the line below to auto-load Bitcoin data when the page loads
+        // window.addEventListener('load', () => searchToken('bitcoin'));
+    </script>
+</body>
+</html>
