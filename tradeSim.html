@@ -90,6 +90,11 @@
         .chart canvas {
             width: 100%;
             height: 100%;
+            cursor: grab;
+        }
+        
+        .chart canvas:active {
+            cursor: grabbing;
         }
         
         .price-info {
@@ -100,7 +105,7 @@
         
         .price-label {
             font-size: 0.75rem;
-            color: var (--text-secondary);
+            color: var(--text-secondary);
         }
         
         .price-value {
@@ -135,7 +140,7 @@
         }
         
         .tab.active {
-            color: var (--accent);
+            color: var(--accent);
             border-bottom: 2px solid var(--accent);
         }
         
@@ -351,7 +356,6 @@
             padding: 1rem;
         }
 
-        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -423,7 +427,6 @@
             font-size: 1rem;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 1024px) {
             .main-content {
                 flex-direction: column;
@@ -434,6 +437,92 @@
                 border-left: none;
                 border-top: 1px solid var(--border);
             }
+        }
+
+        .timeframe-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .timeframe-btn {
+            padding: 0.5rem 1rem;
+            background-color: var(--primary);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .timeframe-btn.active {
+            background-color: var(--accent);
+            color: var(--primary);
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .chart-btn {
+            background-color: var(--secondary);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .chart-btn:hover {
+            background-color: var(--accent);
+            color: var(--primary);
+        }
+        
+        .debug-info {
+            margin-left: auto;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .chart {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-crosshair-v,
+        .chart-crosshair-h {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+            display: none;
+        }
+        
+        .chart-crosshair-v {
+            width: 1px;
+            height: 100%;
+            top: 0;
+        }
+        
+        .chart-crosshair-h {
+            height: 1px;
+            width: 100%;
+            left: 0;
+        }
+        
+        .chart-price-label {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            pointer-events: none;
+            display: none;
         }
     </style>
 </head>
@@ -470,6 +559,20 @@
                     <option value="MATICUSDT">MATIC/USDT</option>
                     <option value="LINKUSDT">LINK/USDT</option>
                 </select>
+            </div>
+            <div class="timeframe-selector">
+                <button class="timeframe-btn active" data-timeframe="15m">15m</button>
+                <button class="timeframe-btn" data-timeframe="30m">30m</button>
+                <button class="timeframe-btn" data-timeframe="1h">1h</button>
+                <button class="timeframe-btn" data-timeframe="4h">4h</button>
+                <button class="timeframe-btn" data-timeframe="1d">1d</button>
+            </div>
+            <div class="chart-controls">
+                <button id="zoom-in" class="chart-btn">+</button>
+                <button id="zoom-out" class="chart-btn">-</button>
+                <button id="reset-zoom" class="chart-btn">Reset</button>
+                <button id="draw-trendline" class="chart-btn">Draw Trendline</button>
+                <div class="debug-info" id="debug-info">Price: $0</div>
             </div>
             <div class="chart" id="price-chart">
                 <canvas id="chart-canvas"></canvas>
@@ -557,10 +660,8 @@
                         <div class="order-book-column">Total</div>
                     </div>
                     <div id="asks-container">
-                        <!-- Ask orders will be populated by JavaScript -->
                     </div>
                     <div id="bids-container">
-                        <!-- Bid orders will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -569,18 +670,16 @@
                 <div class="positions-title">Positions</div>
                 <div id="positions-container">
                     <div class="no-position" id="no-positions-message">No open positions</div>
-                    <!-- Positions will be populated by JavaScript -->
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Settings Modal -->
     <div class="modal" id="settings-modal">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">Settings</div>
-                <button class="close-modal">&times;</button>
+                <button class="close-modal">×</button>
             </div>
             
             <div class="settings-group">
@@ -617,16 +716,16 @@
     </div>
 
     <script>
-        // Trading simulator main JavaScript code
         document.addEventListener('DOMContentLoaded', async () => {
             initChart();
             await fetchHistoricalData();
             await fetchCurrentPrice();
             startPriceUpdates();
+            initEnhancedChart();
+            addCrosshairTracking();
         });
         
-        // Global variables
-        let currentPrice = 45000; // Initial default price
+        let currentPrice = 45000;
         let initialBalance = 10000;
         let userBalance = initialBalance;
         let availableBalance = initialBalance;
@@ -635,16 +734,19 @@
         let priceHistory = [];
         let orderBook = [];
         let selectedPair = 'bitcoin';
-        let displayPair = 'BTCUSDT'; // For display purposes
+        let displayPair = 'BTCUSDT';
         let orderType = 'market';
-        let updateInterval = 15000; // 15 seconds to respect API rate limits
-        let volatilityMultiplier = 1.0; // Market volatility setting
+        let updateInterval = 15000;
+        let volatilityMultiplier = 1.0;
         let priceUpdateInterval;
-        let chartUpdateInterval;
         let chartContext;
         let historicalDataLoaded = false;
+        let rawPriceData = [];
+        let currentTimeframe = '15m';
+        let trendlines = [];
+        let tempTrendline = null;
+        let isDrawingTrendline = false;
         
-        // CoinGecko API endpoints
         const COINGECKO_API = {
             PRICE: 'https://api.coingecko.com/api/v3/simple/price',
             COINS: 'https://api.coingecko.com/api/v3/coins/list',
@@ -652,7 +754,6 @@
             COIN_DATA: 'https://api.coingecko.com/api/v3/coins/{id}'
         };
         
-        // Mapping of trading pairs to CoinGecko IDs
         const TRADING_PAIRS = {
             'BTCUSDT': 'bitcoin',
             'ETHUSDT': 'ethereum',
@@ -666,13 +767,11 @@
             'LINKUSDT': 'chainlink'
         };
         
-        // Reverse mapping for display
         const COINGECKO_TO_PAIR = {};
         Object.keys(TRADING_PAIRS).forEach(pair => {
             COINGECKO_TO_PAIR[TRADING_PAIRS[pair]] = pair;
         });
         
-        // DOM Elements
         const userBalanceElement = document.getElementById('user-balance');
         const availableBalanceElement = document.getElementById('available-balance');
         const currentPriceElement = document.getElementById('current-price');
@@ -704,94 +803,99 @@
         const marketVolatilitySelect = document.getElementById('market-volatility');
         const orderTabs = document.querySelectorAll('.tab');
         const chartCanvas = document.getElementById('chart-canvas');
+        const timeframeButtons = document.querySelectorAll('.timeframe-btn');
+        const drawTrendlineBtn = document.getElementById('draw-trendline');
         
-        // Initialize the chart
         function initChart() {
             chartContext = chartCanvas.getContext('2d');
-            // Set canvas size
             chartCanvas.width = chartCanvas.offsetWidth;
             chartCanvas.height = chartCanvas.offsetHeight;
-            
-            // Generate initial price history
-            for (let i = 0; i < 100; i++) {
-                priceHistory.push(currentPrice * (0.98 + Math.random() * 0.04));
-            }
-            
             drawChart();
         }
         
-        // Draw the candlestick chart
         function drawChart() {
             const ctx = chartContext;
             const width = chartCanvas.width;
             const height = chartCanvas.height;
-        
-            // Clear the canvas
             ctx.clearRect(0, 0, width, height);
-        
-            // Calculate min and max price for scaling
-            const prices = [...priceHistory];
-            const minPrice = Math.min(...prices.map(p => p.low)) * 0.999;
-            const maxPrice = Math.max(...prices.map(p => p.high)) * 1.001;
+            
+            if (!priceHistory.length) return;
+            
+            const startIdx = Math.max(0, priceHistory.length - visibleDataPoints - panOffsetX);
+            const endIdx = Math.min(priceHistory.length, startIdx + visibleDataPoints);
+            const visiblePrices = priceHistory.slice(startIdx, endIdx);
+            
+            if (!visiblePrices.length) return;
+            
+            const minPrice = Math.min(...visiblePrices.map(p => p.low)) * 0.999;
+            const maxPrice = Math.max(...visiblePrices.map(p => p.high)) * 1.001;
             const priceRange = maxPrice - minPrice;
-        
-            // Draw grid
+            
             ctx.beginPath();
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
-        
-            // Horizontal grid lines
             for (let i = 0; i <= 5; i++) {
                 const y = Math.floor(height * (i / 5));
                 ctx.moveTo(0, y);
                 ctx.lineTo(width, y);
-        
-                // Draw price labels
                 const price = maxPrice - (i / 5) * priceRange;
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
                 ctx.font = '10px Arial';
                 ctx.textAlign = 'left';
                 ctx.fillText(price.toFixed(2), 5, y - 5);
             }
-        
-            // Vertical grid lines
-            for (let i = 0; i <= 5; i++) {
-                const x = Math.floor(width * (i / 5));
+            const timeStep = Math.max(1, Math.floor(visiblePrices.length / 10));
+            for (let i = 0; i < visiblePrices.length; i += timeStep) {
+                const x = Math.floor(width * (i / visiblePrices.length));
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, height);
             }
-        
             ctx.stroke();
-        
-            // Draw candlesticks
-            const barWidth = width / prices.length;
-        
-            prices.forEach((price, index) => {
+            
+            const barWidth = width / visiblePrices.length;
+            visiblePrices.forEach((price, index) => {
                 const x = index * barWidth;
                 const openY = height - (price.open - minPrice) / priceRange * height;
                 const closeY = height - (price.close - minPrice) / priceRange * height;
                 const highY = height - (price.high - minPrice) / priceRange * height;
                 const lowY = height - (price.low - minPrice) / priceRange * height;
-        
-                // Determine candlestick color
                 const isBullish = price.close > price.open;
                 ctx.fillStyle = isBullish ? '#02C076' : '#F6465D';
                 ctx.strokeStyle = ctx.fillStyle;
-        
-                // Draw wick
                 ctx.beginPath();
                 ctx.moveTo(x + barWidth / 2, highY);
                 ctx.lineTo(x + barWidth / 2, lowY);
                 ctx.stroke();
-        
-                // Draw body
                 const bodyHeight = Math.abs(closeY - openY);
                 const bodyY = Math.min(openY, closeY);
                 ctx.fillRect(x + barWidth * 0.2, bodyY, barWidth * 0.6, bodyHeight);
             });
+            
+            ctx.strokeStyle = 'yellow';
+            ctx.lineWidth = 2;
+            trendlines.forEach(trendline => {
+                const startCoords = getCanvasCoordinates(trendline.start.timestamp, trendline.start.price);
+                const endCoords = getCanvasCoordinates(trendline.end.timestamp, trendline.end.price);
+                if (startCoords && endCoords) {
+                    ctx.beginPath();
+                    ctx.moveTo(startCoords.x, startCoords.y);
+                    ctx.lineTo(endCoords.x, endCoords.y);
+                    ctx.stroke();
+                }
+            });
+            
+            if (tempTrendline) {
+                const startCoords = getCanvasCoordinates(tempTrendline.start.timestamp, tempTrendline.start.price);
+                const endCoords = getCanvasCoordinates(tempTrendline.end.timestamp, tempTrendline.end.price);
+                if (startCoords && endCoords) {
+                    ctx.beginPath();
+                    ctx.moveTo(startCoords.x, startCoords.y);
+                    ctx.lineTo(endCoords.x, endCoords.y);
+                    ctx.stroke();
+                }
+            }
         }
         
-        // Fetch current price from CoinGecko API
         async function fetchCurrentPrice() {
             try {
                 const params = new URLSearchParams({
@@ -803,82 +907,40 @@
                     include_24h_high: 'true',
                     include_24h_low: 'true'
                 });
-                
                 const response = await fetch(`${COINGECKO_API.PRICE}?${params.toString()}`);
-                
                 if (!response.ok) {
-                    console.error('API request failed:', response.status);
-                    // Use last known price if available, otherwise use placeholder
-                    if (currentPrice === 0) {
-                        currentPrice = 45000; // Placeholder price
-                    }
-                    // Generate simulated price movement for offline demonstration
                     simulatePriceMovement();
                     return;
                 }
-                
                 const data = await response.json();
-                
                 if (data[selectedPair]) {
                     const previousPrice = currentPrice;
                     currentPrice = data[selectedPair].usd;
-                    
-                    // If this is the first price update and we don't have price history
-                    if (!historicalDataLoaded) {
-                        await fetchHistoricalData();
-                    } else {
-                        // Add current price to history
-                        priceHistory.push(currentPrice);
-                        if (priceHistory.length > 100) {
-                            priceHistory.shift();
-                        }
-                    }
-                    
-                    // Update UI with price data
                     updatePriceUI(data[selectedPair], previousPrice);
                 } else {
-                    // If data doesn't contain our selected pair, simulate price
                     simulatePriceMovement();
                 }
             } catch (error) {
                 console.error('Error fetching price:', error);
-                // Use simulated price for offline/error cases
                 simulatePriceMovement();
             }
         }
         
-        // Simulate price movement when API fails
         function simulatePriceMovement() {
             const previousPrice = currentPrice;
-
-            // Generate a random price movement with volatility multiplier
             const changePercent = (Math.random() * 0.02 - 0.01) * volatilityMultiplier;
             currentPrice = currentPrice * (1 + changePercent);
-
-            // Generate candlestick data
             const open = previousPrice;
             const close = currentPrice;
-            const high = Math.max(open, close) * (1 + Math.random() * 0.01);
-            const low = Math.min(open, close) * (1 - Math.random() * 0.01);
-
-            // Add to price history
-            priceHistory.push({ open, high, low, close });
-            if (priceHistory.length > 100) {
-                priceHistory.shift();
-            }
-
-            // Calculate 24h high/low from local data
+            const high = Math.max(open, close) * (1 + Math.random() * 0.005);
+            const low = Math.min(open, close) * (1 - Math.random() * 0.005);
+            priceHistory.push({ open, high, low, close, timestamp: Date.now() });
+            if (priceHistory.length > 300) priceHistory.shift();
             const high24h = Math.max(...priceHistory.map(p => p.high));
             const low24h = Math.min(...priceHistory.map(p => p.low));
-
-            // Simulate 24h change
             const priceStart = priceHistory[0].open;
             const priceChange = ((currentPrice - priceStart) / priceStart) * 100;
-
-            // Update UI
             currentPriceElement.textContent = `${currentPrice.toFixed(2)}`;
-
-            // Determine if price is up or down from previous
             if (currentPrice > previousPrice) {
                 currentPriceElement.className = 'price-value up';
             } else if (currentPrice < previousPrice) {
@@ -886,82 +948,78 @@
             } else {
                 currentPriceElement.className = 'price-value';
             }
-
-            // Update 24h high/low and change in the UI
             priceHighElement.textContent = `${high24h.toFixed(2)}`;
             priceLowElement.textContent = `${low24h.toFixed(2)}`;
             priceChangeElement.textContent = `${priceChange.toFixed(2)}%`;
-
-            // Update the change color based on positive or negative change
-            if (priceChange > 0) {
-                priceChangeElement.className = 'price-value up';
-            } else if (priceChange < 0) {
-                priceChangeElement.className = 'price-value down';
-            } else {
-                priceChangeElement.className = 'price-value';
-            }
-
-            // Redraw the chart with the updated price history
+            priceChangeElement.className = priceChange > 0 ? 'price-value up' : priceChange < 0 ? 'price-value down' : 'price-value';
             drawChart();
         }
 
         function updatePriceUI(priceData, previousPrice) {
-            // Update current price
             currentPriceElement.textContent = `${currentPrice.toFixed(2)}`;
-        
-            // Determine if price is up or down
-            if (currentPrice > previousPrice) {
-                currentPriceElement.className = 'price-value up';
-            } else if (currentPrice < previousPrice) {
-                currentPriceElement.className = 'price-value down';
-            } else {
-                currentPriceElement.className = 'price-value';
-            }
-        
-            // Update 24h high/low and change
+            currentPriceElement.className = currentPrice > previousPrice ? 'price-value up' : currentPrice < previousPrice ? 'price-value down' : 'price-value';
             priceHighElement.textContent = `${priceData.high_24h.toFixed(2)}`;
             priceLowElement.textContent = `${priceData.low_24h.toFixed(2)}`;
             priceChangeElement.textContent = `${priceData.price_change_percentage_24h.toFixed(2)}%`;
-        
-            // Update change color
-            if (priceData.price_change_percentage_24h > 0) {
-                priceChangeElement.className = 'price-value up';
-            } else if (priceData.price_change_percentage_24h < 0) {
-                priceChangeElement.className = 'price-value down';
-            } else {
-                priceChangeElement.className = 'price-value';
-            }
+            priceChangeElement.className = priceData.price_change_percentage_24h > 0 ? 'price-value up' : priceData.price_change_percentage_24h < 0 ? 'price-value down' : 'price-value';
         }
         
-        // Fetch historical data for the selected pair
         async function fetchHistoricalData() {
             try {
                 const response = await fetch(COINGECKO_API.MARKET_CHART.replace('{id}', selectedPair) + '?vs_currency=usd&days=1');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch historical data');
-                }
-
+                if (!response.ok) throw new Error('Failed to fetch historical data');
                 const data = await response.json();
-                const prices = data.prices;
-
-                // Populate price history with candlestick data
-                priceHistory = prices.map((price, index) => {
-                    const open = index === 0 ? price[1] : prices[index - 1][1];
-                    const close = price[1];
-                    const high = Math.max(open, close);
-                    const low = Math.min(open, close);
-                    return { open, high, low, close };
-                });
+                rawPriceData = data.prices;
+                updateChartData();
                 historicalDataLoaded = true;
-
-                // Redraw the chart with historical data
-                drawChart();
             } catch (error) {
                 console.error('Error fetching historical data:', error);
+                priceHistory = generateCandlestickData(currentPrice);
+                historicalDataLoaded = true;
+                drawChart();
             }
         }
         
-        // Event listeners
+        function aggregateOHLC(timeframe) {
+            const intervalMinutes = parseTimeframe(timeframe);
+            const intervalMs = intervalMinutes * 60 * 1000;
+            const ohlcData = [];
+            let currentOhlc = null;
+            let currentStart = rawPriceData[0][0] - (rawPriceData[0][0] % intervalMs);
+            rawPriceData.forEach(([timestamp, price]) => {
+                while (timestamp >= currentStart + intervalMs) {
+                    if (currentOhlc) ohlcData.push(currentOhlc);
+                    currentStart += intervalMs;
+                    currentOhlc = null;
+                }
+                if (!currentOhlc) {
+                    currentOhlc = { open: price, high: price, low: price, close: price, timestamp: currentStart };
+                } else {
+                    currentOhlc.high = Math.max(currentOhlc.high, price);
+                    currentOhlc.low = Math.min(currentOhlc.low, price);
+                    currentOhlc.close = price;
+                }
+            });
+            if (currentOhlc) ohlcData.push(currentOhlc);
+            return ohlcData;
+        }
+        
+        function parseTimeframe(timeframe) {
+            const match = timeframe.match(/^(\d+)([mdh])$/);
+            if (!match) return 1;
+            const value = parseInt(match[1]);
+            const unit = match[2];
+            if (unit === 'm') return value;
+            if (unit === 'h') return value * 60;
+            if (unit === 'd') return value * 1440;
+            return 1;
+        }
+        
+        function updateChartData() {
+            priceHistory = aggregateOHLC(currentTimeframe);
+            drawChart();
+        }
+        
         settingsButton.addEventListener('click', () => {
             settingsModal.style.display = 'flex';
         });
@@ -971,35 +1029,22 @@
         });
         
         saveSettingsButton.addEventListener('click', () => {
-            // Update initial balance
             initialBalance = parseFloat(initialBalanceInput.value) || initialBalance;
             userBalance = initialBalance;
             availableBalance = initialBalance;
             userBalanceElement.textContent = `$${userBalance.toFixed(2)}`;
             availableBalanceElement.textContent = `$${availableBalance.toFixed(2)}`;
-
-            // Update price update interval
             updateInterval = parseInt(priceUpdateIntervalSelect.value, 10) || updateInterval;
-
-            // Update volatility multiplier
             volatilityMultiplier = parseFloat(marketVolatilitySelect.value) || volatilityMultiplier;
-
-            // Close modal
             settingsModal.style.display = 'none';
+            clearInterval(priceUpdateInterval);
+            priceUpdateInterval = setInterval(fetchCurrentPrice, updateInterval);
         });
         
         orderTypeSelect.addEventListener('change', (event) => {
             orderType = event.target.value;
-            if (orderType === 'limit') {
-                limitPriceContainer.style.display = 'block';
-                triggerPriceContainer.style.display = 'none';
-            } else if (orderType === 'conditional') {
-                limitPriceContainer.style.display = 'block';
-                triggerPriceContainer.style.display = 'block';
-            } else {
-                limitPriceContainer.style.display = 'none';
-                triggerPriceContainer.style.display = 'none';
-            }
+            limitPriceContainer.style.display = orderType === 'limit' || orderType === 'conditional' ? 'block' : 'none';
+            triggerPriceContainer.style.display = orderType === 'conditional' ? 'block' : 'none';
         });
         
         leverageOptions.forEach(option => {
@@ -1015,52 +1060,131 @@
             currentLeverage = parseInt(event.target.value);
             leverageOptions.forEach(opt => opt.classList.remove('active'));
             leverageOptions.forEach(opt => {
-                if (parseInt(opt.dataset.leverage) === currentLeverage) {
-                    opt.classList.add('active');
-                }
+                if (parseInt(opt.dataset.leverage) === currentLeverage) opt.classList.add('active');
             });
         });
         
         tradingPairSelect.addEventListener('change', async (event) => {
             selectedPair = TRADING_PAIRS[event.target.value];
             displayPair = event.target.value;
-
-            // Reset price history and fetch new data
             priceHistory = [];
             historicalDataLoaded = false;
             await fetchHistoricalData();
             await fetchCurrentPrice();
         });
         
-        buyButton.addEventListener('click', () => {
-            placeOrder('buy');
+        buyButton.addEventListener('click', () => placeOrder('buy'));
+        sellButton.addEventListener('click', () => placeOrder('sell'));
+        
+        timeframeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                timeframeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTimeframe = btn.dataset.timeframe;
+                updateChartData();
+            });
         });
         
-        sellButton.addEventListener('click', () => {
-            placeOrder('sell');
+        drawTrendlineBtn.addEventListener('click', () => {
+            isDrawingTrendline = !isDrawingTrendline;
+            drawTrendlineBtn.classList.toggle('active', isDrawingTrendline);
         });
         
-        // Place an order
+        chartCanvas.addEventListener('mousedown', (e) => {
+            if (isDrawingTrendline) {
+                const { timestamp, price } = getDataCoordinates(e);
+                tempTrendline = { start: { timestamp, price }, end: { timestamp, price } };
+            } else {
+                isPanning = true;
+                lastMouseX = e.clientX;
+                chartCanvas.style.cursor = 'grabbing';
+            }
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDrawingTrendline && tempTrendline) {
+                const { timestamp, price } = getDataCoordinates(e);
+                tempTrendline.end = { timestamp, price };
+                drawChart();
+            } else if (isPanning) {
+                const dx = e.clientX - lastMouseX;
+                lastMouseX = e.clientX;
+                panOffsetX = Math.max(0, panOffsetX - dx / 5);
+                drawChart();
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDrawingTrendline && tempTrendline) {
+                trendlines.push(tempTrendline);
+                tempTrendline = null;
+                isDrawingTrendline = false;
+                drawTrendlineBtn.classList.remove('active');
+                drawChart();
+            } else {
+                isPanning = false;
+                chartCanvas.style.cursor = 'grab';
+            }
+        });
+        
+        function getDataCoordinates(e) {
+            const rect = chartCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const width = chartCanvas.width;
+            const height = chartCanvas.height;
+            const startIdx = Math.max(0, priceHistory.length - visibleDataPoints - panOffsetX);
+            const endIdx = Math.min(priceHistory.length, startIdx + visibleDataPoints);
+            const visiblePrices = priceHistory.slice(startIdx, endIdx);
+            if (!visiblePrices.length) return { timestamp: 0, price: 0 };
+            const fractionalIndex = (x / width) * (visiblePrices.length - 1);
+            const index1 = Math.floor(fractionalIndex);
+            const index2 = Math.min(index1 + 1, visiblePrices.length - 1);
+            const alpha = fractionalIndex - index1;
+            const timestamp1 = visiblePrices[index1].timestamp;
+            const timestamp2 = visiblePrices[index2].timestamp;
+            const timestamp = timestamp1 + alpha * (timestamp2 - timestamp1);
+            const minPrice = Math.min(...visiblePrices.map(p => p.low));
+            const maxPrice = Math.max(...visiblePrices.map(p => p.high));
+            const priceRange = maxPrice - minPrice;
+            const price = maxPrice - (y / height) * priceRange;
+            return { timestamp, price };
+        }
+        
+        function getCanvasCoordinates(timestamp, price) {
+            const width = chartCanvas.width;
+            const height = chartCanvas.height;
+            const startIdx = Math.max(0, priceHistory.length - visibleDataPoints - panOffsetX);
+            const endIdx = Math.min(priceHistory.length, startIdx + visibleDataPoints);
+            const visiblePrices = priceHistory.slice(startIdx, endIdx);
+            if (!visiblePrices.length) return null;
+            const firstTimestamp = visiblePrices[0].timestamp;
+            const lastTimestamp = visiblePrices[visiblePrices.length - 1].timestamp;
+            const xFraction = (timestamp - firstTimestamp) / (lastTimestamp - firstTimestamp);
+            const x = xFraction * width;
+            const minPrice = Math.min(...visiblePrices.map(p => p.low));
+            const maxPrice = Math.max(...visiblePrices.map(p => p.high));
+            const priceRange = maxPrice - minPrice;
+            const y = height - (price - minPrice) / priceRange * height;
+            return { x, y };
+        }
+        
         function placeOrder(type) {
             const orderSize = parseFloat(orderSizeInput.value);
             const limitPrice = parseFloat(limitPriceInput.value);
             const triggerPrice = parseFloat(triggerPriceInput.value);
-            
             if (isNaN(orderSize) || orderSize <= 0) {
                 alert('Please enter a valid order size.');
                 return;
             }
-            
             if (orderType === 'limit' && (isNaN(limitPrice) || limitPrice <= 0)) {
                 alert('Please enter a valid limit price.');
                 return;
             }
-            
             if (orderType === 'conditional' && (isNaN(triggerPrice) || triggerPrice <= 0)) {
                 alert('Please enter a valid trigger price.');
                 return;
             }
-            
             const order = {
                 type,
                 size: orderSize,
@@ -1072,727 +1196,190 @@
                 entryPrice: currentPrice,
                 timestamp: Date.now()
             };
-            
-            // Check if there's enough balance
             const requiredMargin = (orderSize / currentLeverage);
             if (availableBalance < requiredMargin) {
                 alert('Insufficient balance to place this order.');
                 return;
             }
-            
-            // Deduct margin from available balance
             availableBalance -= requiredMargin;
             availableBalanceElement.textContent = `$${availableBalance.toFixed(2)}`;
-            
-            // Add order to positions
             positions.push(order);
             updatePositionsUI();
         }
         
-        // Update positions UI
         function updatePositionsUI() {
             positionsContainer.innerHTML = '';
-            
             if (positions.length === 0) {
                 noPositionsMessage.style.display = 'block';
                 return;
             }
-            
             noPositionsMessage.style.display = 'none';
-            
             positions.forEach(position => {
                 const positionElement = document.createElement('div');
                 positionElement.className = 'position';
-                
                 const positionHeader = document.createElement('div');
                 positionHeader.className = 'position-header';
-                
                 const positionSymbol = document.createElement('div');
                 positionSymbol.className = 'position-symbol';
                 positionSymbol.textContent = position.pair;
-                
                 const positionType = document.createElement('div');
                 positionType.className = `position-type ${position.type}`;
                 positionType.textContent = position.type === 'buy' ? 'Long' : 'Short';
-                
                 positionHeader.appendChild(positionSymbol);
                 positionHeader.appendChild(positionType);
-                
                 const positionDetails = document.createElement('div');
                 positionDetails.className = 'position-details';
-                
                 const entryPrice = document.createElement('div');
                 entryPrice.textContent = `Entry: $${position.entryPrice.toFixed(2)}`;
-                
                 const leverage = document.createElement('div');
                 leverage.textContent = `Leverage: ${position.leverage}x`;
-                
                 const size = document.createElement('div');
                 size.textContent = `Size: ${position.size} USDT`;
-                
                 positionDetails.appendChild(entryPrice);
                 positionDetails.appendChild(leverage);
                 positionDetails.appendChild(size);
-                
                 const positionPnl = document.createElement('div');
                 positionPnl.className = 'position-pnl';
-                
                 const pnl = document.createElement('div');
                 const currentPnl = (currentPrice - position.entryPrice) * position.size / position.entryPrice * position.leverage;
                 pnl.textContent = `PnL: $${currentPnl.toFixed(2)}`;
                 pnl.className = currentPnl >= 0 ? 'up' : 'down';
-                
                 const closeButton = document.createElement('button');
                 closeButton.className = 'close-position';
                 closeButton.textContent = 'Close';
-                closeButton.addEventListener('click', () => {
-                    closePosition(position);
-                });
-                
+                closeButton.addEventListener('click', () => closePosition(position));
                 positionPnl.appendChild(pnl);
                 positionPnl.appendChild(closeButton);
-                
                 positionElement.appendChild(positionHeader);
                 positionElement.appendChild(positionDetails);
                 positionElement.appendChild(positionPnl);
-                
                 positionsContainer.appendChild(positionElement);
             });
         }
         
-        // Close a position
         function closePosition(position) {
             const index = positions.indexOf(position);
             if (index !== -1) {
                 positions.splice(index, 1);
-                
-                // Release margin back to available balance
                 const requiredMargin = (position.size / position.leverage);
                 availableBalance += requiredMargin;
                 availableBalanceElement.textContent = `$${availableBalance.toFixed(2)}`;
-                
                 updatePositionsUI();
             }
         }
         
-        // Initial setup
         userBalanceElement.textContent = `$${userBalance.toFixed(2)}`;
         availableBalanceElement.textContent = `$${availableBalance.toFixed(2)}`;
         priceUpdateInterval = setInterval(fetchCurrentPrice, updateInterval);
-        initChart();
-
+        
         function startPriceUpdates() {
-            if (priceUpdateInterval) {
-                clearInterval(priceUpdateInterval);
-            }
-
+            if (priceUpdateInterval) clearInterval(priceUpdateInterval);
             priceUpdateInterval = setInterval(fetchCurrentPrice, updateInterval);
         }
-
-        // Start updates on page load
-        startPriceUpdates();
-
-        // Cache data in localStorage
-        try {
-            localStorage.setItem(`football_api:${cacheKey}`, JSON.stringify(storageData));
-        } catch (e) {
-            console.warn('Failed to cache in localStorage', e);
-        }
-        // Enhanced Trading Simulator Chart Code
-document.addEventListener('DOMContentLoaded', async () => {
-    // Add zoom controls to the chart container
-    const chartContainer = document.querySelector('.chart-container');
-    const zoomControlsHTML = `
-        <div class="chart-controls">
-            <button id="zoom-in" class="chart-btn">+</button>
-            <button id="zoom-out" class="chart-btn">-</button>
-            <button id="reset-zoom" class="chart-btn">Reset</button>
-            <div class="debug-info" id="debug-info">Price: $0</div>
-        </div>
-    `;
-    
-    // Insert the zoom controls before the chart
-    const chartDiv = document.querySelector('.chart');
-    chartDiv.insertAdjacentHTML('beforebegin', zoomControlsHTML);
-    
-    // Add styles for the chart controls
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-        .chart-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
         
-        .chart-btn {
-            background-color: var(--secondary);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+        let zoomLevel = 1;
+        let panOffsetX = 0;
+        let isPanning = false;
+        let lastMouseX = 0;
+        const MAX_ZOOM = 5;
+        const MIN_ZOOM = 0.5;
+        let visibleDataPoints = 100;
+        const debugInfo = document.getElementById('debug-info');
+        const zoomInBtn = document.getElementById('zoom-in');
+        const zoomOutBtn = document.getElementById('zoom-out');
+        const resetZoomBtn = document.getElementById('reset-zoom');
         
-        .chart-btn:hover {
-            background-color: var(--accent);
-            color: var(--primary);
-        }
-        
-        .debug-info {
-            margin-left: auto;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 5px 10px;
-            border-radius: 4px;
-        }
-        
-        .chart canvas {
-            cursor: grab;
-        }
-        
-        .chart canvas:active {
-            cursor: grabbing;
-        }
-    `;
-    document.head.appendChild(styleElement);
-    
-    // Initialize enhanced chart functionality
-    initEnhancedChart();
-});
-
-// Enhanced chart functionality with zooming and panning
-function initEnhancedChart() {
-    // Global chart variables
-    let zoomLevel = 1;
-    let panOffsetX = 0;
-    let isPanning = false;
-    let lastMouseX = 0;
-    const MAX_ZOOM = 5;
-    const MIN_ZOOM = 0.5;
-    let visibleDataPoints = 100; // Default number of visible points
-    let debugInfo = document.getElementById('debug-info');
-    
-    // Get chart DOM elements
-    const chartCanvas = document.getElementById('chart-canvas');
-    const zoomInBtn = document.getElementById('zoom-in');
-    const zoomOutBtn = document.getElementById('zoom-out');
-    const resetZoomBtn = document.getElementById('reset-zoom');
-    
-    // Override the drawChart function to support zooming and panning
-    window.drawChart = function() {
-        const ctx = chartContext;
-        const width = chartCanvas.width;
-        const height = chartCanvas.height;
-        
-        // Clear the canvas
-        ctx.clearRect(0, 0, width, height);
-        
-        if (!priceHistory || priceHistory.length === 0) {
-            return;
-        }
-        
-        // Apply zoom to visible data points
-        visibleDataPoints = Math.max(20, Math.floor(100 / zoomLevel));
-        
-        // Calculate visible range with panning
-        let startIdx = Math.max(0, priceHistory.length - visibleDataPoints - panOffsetX);
-        let endIdx = Math.min(priceHistory.length, startIdx + visibleDataPoints);
-        
-        // Ensure we have valid bounds
-        if (startIdx >= endIdx) {
-            startIdx = Math.max(0, endIdx - 20);
-        }
-        
-        // Get visible prices
-        const visiblePrices = priceHistory.slice(startIdx, endIdx);
-        
-        // Calculate min and max price for scaling
-        let minPrice = Number.MAX_VALUE;
-        let maxPrice = Number.MIN_VALUE;
-        
-        visiblePrices.forEach(price => {
-            if (typeof price === 'number') {
-                // Simple price point
-                minPrice = Math.min(minPrice, price);
-                maxPrice = Math.max(maxPrice, price);
-            } else if (price && typeof price === 'object') {
-                // Candlestick data
-                if (price.low !== undefined) minPrice = Math.min(minPrice, price.low);
-                if (price.high !== undefined) maxPrice = Math.max(maxPrice, price.high);
-                if (price.open !== undefined) {
-                    minPrice = Math.min(minPrice, price.open);
-                    maxPrice = Math.max(maxPrice, price.open);
-                }
-                if (price.close !== undefined) {
-                    minPrice = Math.min(minPrice, price.close);
-                    maxPrice = Math.max(maxPrice, price.close);
-                }
-            }
-        });
-        
-        // Add padding to price range
-        const padding = (maxPrice - minPrice) * 0.05;
-        minPrice = minPrice - padding;
-        maxPrice = maxPrice + padding;
-        const priceRange = maxPrice - minPrice;
-        
-        // Draw grid
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.lineWidth = 1;
-        
-        // Horizontal grid lines with price labels
-        for (let i = 0; i <= 5; i++) {
-            const y = Math.floor(height * (i / 5));
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            
-            // Draw price labels
-            const price = maxPrice - (i / 5) * priceRange;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText(price.toFixed(2), 5, y - 5);
-        }
-        
-        // Vertical grid lines with time labels (every 10 points)
-        const timeStep = Math.max(1, Math.floor(visiblePrices.length / 10));
-        for (let i = 0; i < visiblePrices.length; i += timeStep) {
-            const x = Math.floor(width * (i / visiblePrices.length));
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-            
-            // Draw time labels (could be enhanced with actual timestamps)
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'center';
-            const indexLabel = startIdx + i;
-            ctx.fillText(indexLabel, x, height - 5);
-        }
-        
-        ctx.stroke();
-        
-        // Draw candlesticks
-        const barWidth = width / visiblePrices.length;
-        
-        visiblePrices.forEach((price, index) => {
-            const x = index * barWidth;
-            
-            // Handle both types of price data (simple number or candlestick object)
-            if (typeof price === 'number') {
-                // Simple price point - draw as line
-                const y = height - (price - minPrice) / priceRange * height;
-                if (index > 0) {
-                    const prevY = height - (visiblePrices[index-1] - minPrice) / priceRange * height;
-                    ctx.beginPath();
-                    ctx.strokeStyle = price > visiblePrices[index-1] ? '#02C076' : '#F6465D';
-                    ctx.lineWidth = 2;
-                    ctx.moveTo(x - barWidth, prevY);
-                    ctx.lineTo(x, y);
-                    ctx.stroke();
-                }
-            } else if (price && typeof price === 'object') {
-                // Candlestick data
-                if (price.open !== undefined && price.close !== undefined) {
-                    const openY = height - (price.open - minPrice) / priceRange * height;
-                    const closeY = height - (price.close - minPrice) / priceRange * height;
-                    
-                    // Use high/low if available, otherwise use open/close
-                    const highY = price.high !== undefined ? 
-                        height - (price.high - minPrice) / priceRange * height : 
-                        Math.min(openY, closeY);
-                    
-                    const lowY = price.low !== undefined ? 
-                        height - (price.low - minPrice) / priceRange * height : 
-                        Math.max(openY, closeY);
-                    
-                    // Determine candlestick color
-                    const isBullish = price.close > price.open;
-                    ctx.fillStyle = isBullish ? '#02C076' : '#F6465D';
-                    ctx.strokeStyle = ctx.fillStyle;
-                    
-                    // Draw wick
-                    ctx.beginPath();
-                    ctx.moveTo(x + barWidth / 2, highY);
-                    ctx.lineTo(x + barWidth / 2, lowY);
-                    ctx.stroke();
-                    
-                    // Draw body
-                    const bodyHeight = Math.abs(closeY - openY);
-                    const bodyY = Math.min(openY, closeY);
-                    ctx.fillRect(x + barWidth * 0.2, bodyY, barWidth * 0.6, bodyHeight);
-                }
-            }
-        });
-        
-        // Update debug info
-        if (visiblePrices.length > 0) {
-            const lastPrice = visiblePrices[visiblePrices.length - 1];
-            let priceValue;
-            
-            if (typeof lastPrice === 'number') {
-                priceValue = lastPrice;
-            } else if (lastPrice && typeof lastPrice === 'object') {
-                priceValue = lastPrice.close !== undefined ? lastPrice.close : currentPrice;
-            } else {
-                priceValue = currentPrice;
-            }
-            
-            debugInfo.textContent = `Price: $${priceValue.toFixed(2)} | Zoom: ${zoomLevel.toFixed(1)}x | Points: ${visiblePrices.length}`;
-        }
-    };
-    
-    // Add event listeners for zooming and panning
-    
-    // Zoom in button
-    zoomInBtn.addEventListener('click', () => {
-        zoomLevel = Math.min(MAX_ZOOM, zoomLevel * 1.2);
-        drawChart();
-    });
-    
-    // Zoom out button
-    zoomOutBtn.addEventListener('click', () => {
-        zoomLevel = Math.max(MIN_ZOOM, zoomLevel / 1.2);
-        drawChart();
-    });
-    
-    // Reset zoom button
-    resetZoomBtn.addEventListener('click', () => {
-        zoomLevel = 1;
-        panOffsetX = 0;
-        drawChart();
-    });
-    
-    // Mouse wheel zoom
-    chartCanvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        
-        // Determine zoom direction
-        const zoomIn = e.deltaY < 0;
-        
-        // Apply zoom
-        if (zoomIn) {
-            zoomLevel = Math.min(MAX_ZOOM, zoomLevel * 1.1);
-        } else {
-            zoomLevel = Math.max(MIN_ZOOM, zoomLevel / 1.1);
-        }
-        
-        drawChart();
-    });
-    
-    // Panning with mouse
-    chartCanvas.addEventListener('mousedown', (e) => {
-        isPanning = true;
-        lastMouseX = e.clientX;
-        chartCanvas.style.cursor = 'grabbing';
-    });
-    
-    document.addEventListener('mouseup', () => {
-        isPanning = false;
-        chartCanvas.style.cursor = 'grab';
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (!isPanning) return;
-        
-        const dx = e.clientX - lastMouseX;
-        lastMouseX = e.clientX;
-        
-        // Convert pixel movement to data points
-        const dataPointDelta = Math.round(dx / (chartCanvas.width / visibleDataPoints));
-        panOffsetX = Math.max(0, panOffsetX - dataPointDelta);
-        
-        // Limit panning to available data
-        const maxPan = Math.max(0, priceHistory.length - visibleDataPoints);
-        panOffsetX = Math.min(maxPan, panOffsetX);
-        
-        drawChart();
-    });
-    
-    // Function to generate proper candlestick data
-    function generateCandlestickData(basePrice, count = 100) {
-        const candlesticks = [];
-        let price = basePrice;
-        
-        for (let i = 0; i < count; i++) {
-            // Generate random price movement
-            const change = price * (Math.random() * 0.02 - 0.01) * volatilityMultiplier;
-            const open = price;
-            price = open + change;
-            const close = price;
-            
-            // High and low with some randomness
-            const high = Math.max(open, close) * (1 + Math.random() * 0.005);
-            const low = Math.min(open, close) * (1 - Math.random() * 0.005);
-            
-            candlesticks.push({
-                open,
-                high,
-                low,
-                close,
-                timestamp: Date.now() - (count - i) * 60000 // Simple timestamp approximation
+        function initEnhancedChart() {
+            zoomInBtn.addEventListener('click', () => {
+                zoomLevel = Math.min(MAX_ZOOM, zoomLevel * 1.2);
+                drawChart();
             });
-        }
-        
-        return candlesticks;
-    }
-    
-    // Override original fetchHistoricalData function to create proper candlestick data
-    // if API fails or for debugging purposes
-    const originalFetchHistoricalData = window.fetchHistoricalData;
-    window.fetchHistoricalData = async function() {
-        try {
-            await originalFetchHistoricalData();
-            
-            // If we don't have data or need to debug, generate synthetic data
-            if (!historicalDataLoaded || priceHistory.length < 20) {
-                console.log("Generating debug candlestick data");
-                priceHistory = generateCandlestickData(currentPrice);
-                historicalDataLoaded = true;
-            }
-            
-            // Ensure data is in candlestick format
-            priceHistory = priceHistory.map(price => {
-                if (typeof price === 'number') {
-                    return {
-                        open: price * 0.998,
-                        high: price * 1.002,
-                        low: price * 0.995,
-                        close: price,
-                        timestamp: Date.now()
-                    };
-                }
-                return price;
+            zoomOutBtn.addEventListener('click', () => {
+                zoomLevel = Math.max(MIN_ZOOM, zoomLevel / 1.2);
+                drawChart();
             });
+            resetZoomBtn.addEventListener('click', () => {
+                zoomLevel = 1;
+                panOffsetX = 0;
+                drawChart();
+            });
+            chartCanvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                zoomLevel = e.deltaY < 0 ? Math.min(MAX_ZOOM, zoomLevel * 1.1) : Math.max(MIN_ZOOM, zoomLevel / 1.1);
+                drawChart();
+            });
+            visibleDataPoints = Math.max(20, Math.floor(100 / zoomLevel));
+        }
+        
+        function generateCandlestickData(basePrice, count = 100) {
+            const candlesticks = [];
+            let price = basePrice;
+            for (let i = 0; i < count; i++) {
+                const change = price * (Math.random() * 0.02 - 0.01) * volatilityMultiplier;
+                const open = price;
+                price = open + change;
+                const close = price;
+                const high = Math.max(open, close) * (1 + Math.random() * 0.005);
+                const low = Math.min(open, close) * (1 - Math.random() * 0.005);
+                candlesticks.push({
+                    open,
+                    high,
+                    low,
+                    close,
+                    timestamp: Date.now() - (count - i) * 60000
+                });
+            }
+            return candlesticks;
+        }
+        
+        function addCrosshairTracking() {
+            const verticalLine = document.createElement('div');
+            verticalLine.className = 'chart-crosshair-v';
+            const horizontalLine = document.createElement('div');
+            horizontalLine.className = 'chart-crosshair-h';
+            const priceLabel = document.createElement('div');
+            priceLabel.className = 'chart-price-label';
+            const chartContainer = document.querySelector('.chart');
+            chartContainer.appendChild(verticalLine);
+            chartContainer.appendChild(horizontalLine);
+            chartContainer.appendChild(priceLabel);
             
-            drawChart();
-        } catch (error) {
-            console.error("Error in enhanced fetchHistoricalData:", error);
-            // Generate synthetic data on failure
-            priceHistory = generateCandlestickData(currentPrice);
-            historicalDataLoaded = true;
-            drawChart();
-        }
-    };
-    
-    // Override simulatePriceMovement to create proper candlestick data
-    const originalSimulatePriceMovement = window.simulatePriceMovement;
-    window.simulatePriceMovement = function() {
-        const previousPrice = currentPrice;
-        
-        // Generate a random price movement with volatility multiplier
-        const changePercent = (Math.random() * 0.02 - 0.01) * volatilityMultiplier;
-        currentPrice = currentPrice * (1 + changePercent);
-        
-        // Generate candlestick data
-        const open = previousPrice;
-        const close = currentPrice;
-        const high = Math.max(open, close) * (1 + Math.random() * 0.005);
-        const low = Math.min(open, close) * (1 - Math.random() * 0.005);
-        
-        // Add to price history
-        priceHistory.push({
-            open,
-            high,
-            low,
-            close,
-            timestamp: Date.now()
-        });
-        
-        if (priceHistory.length > 300) { // Keep more history for zooming
-            priceHistory.shift();
-        }
-        
-        // Calculate 24h high/low from local data
-        const high24h = Math.max(...priceHistory.map(p => p.high));
-        const low24h = Math.min(...priceHistory.map(p => p.low));
-        
-        // Simulate 24h change
-        const priceStart = priceHistory[0].open;
-        const priceChange = ((currentPrice - priceStart) / priceStart) * 100;
-        
-        // Update UI
-        currentPriceElement.textContent = `${currentPrice.toFixed(2)}`;
-        
-        // Determine if price is up or down from previous
-        if (currentPrice > previousPrice) {
-            currentPriceElement.className = 'price-value up';
-        } else if (currentPrice < previousPrice) {
-            currentPriceElement.className = 'price-value down';
-        }
-        
-        // Update 24h high/low and change in the UI
-        priceHighElement.textContent = `${high24h.toFixed(2)}`;
-        priceLowElement.textContent = `${low24h.toFixed(2)}`;
-        priceChangeElement.textContent = `${priceChange.toFixed(2)}%`;
-        
-        // Update the change color based on positive or negative change
-        if (priceChange > 0) {
-            priceChangeElement.className = 'price-value up';
-        } else if (priceChange < 0) {
-            priceChangeElement.className = 'price-value down';
-        }
-        
-        // Redraw the chart with the updated price history
-        drawChart();
-        
-        // Debug info update
-        debugInfo.textContent = `Price: $${currentPrice.toFixed(2)} | Zoom: ${zoomLevel.toFixed(1)}x | Points: ${visibleDataPoints}`;
-    };
-}
-
-// Add crosshair price tracking
-function addCrosshairTracking() {
-    const chartCanvas = document.getElementById('chart-canvas');
-    const debugInfo = document.getElementById('debug-info');
-    
-    // Create crosshair elements
-    const verticalLine = document.createElement('div');
-    verticalLine.className = 'chart-crosshair-v';
-    
-    const horizontalLine = document.createElement('div');
-    horizontalLine.className = 'chart-crosshair-h';
-    
-    const priceLabel = document.createElement('div');
-    priceLabel.className = 'chart-price-label';
-    
-    // Add crosshair elements to chart
-    const chartContainer = document.querySelector('.chart');
-    chartContainer.appendChild(verticalLine);
-    chartContainer.appendChild(horizontalLine);
-    chartContainer.appendChild(priceLabel);
-    
-    // Add styles for crosshair
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-        .chart {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .chart-crosshair-v,
-        .chart-crosshair-h {
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.3);
-            pointer-events: none;
-            display: none;
-        }
-        
-        .chart-crosshair-v {
-            width: 1px;
-            height: 100%;
-            top: 0;
-        }
-        
-        .chart-crosshair-h {
-            height: 1px;
-            width: 100%;
-            left: 0;
-        }
-        
-        .chart-price-label {
-            position: absolute;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 12px;
-            pointer-events: none;
-            display: none;
-        }
-    `;
-    document.head.appendChild(styleElement);
-    
-    // Mouse move event for crosshair
-    chartCanvas.addEventListener('mousemove', (e) => {
-        const rect = chartCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        // Update crosshair position
-        verticalLine.style.left = `${x}px`;
-        verticalLine.style.display = 'block';
-        
-        horizontalLine.style.top = `${y}px`;
-        horizontalLine.style.display = 'block';
-        
-        // Calculate price at cursor position
-        if (priceHistory && priceHistory.length > 0) {
-            const height = chartCanvas.height;
-            
-            // Get visible prices
-            const visibleDataPoints = Math.max(20, Math.floor(100 / zoomLevel));
-            const startIdx = Math.max(0, priceHistory.length - visibleDataPoints - panOffsetX);
-            const endIdx = Math.min(priceHistory.length, startIdx + visibleDataPoints);
-            const visiblePrices = priceHistory.slice(startIdx, endIdx);
-            
-            // Find min and max prices
-            let minPrice = Number.MAX_VALUE;
-            let maxPrice = Number.MIN_VALUE;
-            
-            visiblePrices.forEach(price => {
-                if (typeof price === 'number') {
-                    minPrice = Math.min(minPrice, price);
-                    maxPrice = Math.max(maxPrice, price);
-                } else if (price && typeof price === 'object') {
-                    if (price.low !== undefined) minPrice = Math.min(minPrice, price.low);
-                    if (price.high !== undefined) maxPrice = Math.max(maxPrice, price.high);
+            chartCanvas.addEventListener('mousemove', (e) => {
+                const rect = chartCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                verticalLine.style.left = `${x}px`;
+                verticalLine.style.display = 'block';
+                horizontalLine.style.top = `${y}px`;
+                horizontalLine.style.display = 'block';
+                if (priceHistory.length > 0) {
+                    const height = chartCanvas.height;
+                    const startIdx = Math.max(0, priceHistory.length - visibleDataPoints - panOffsetX);
+                    const endIdx = Math.min(priceHistory.length, startIdx + visibleDataPoints);
+                    const visiblePrices = priceHistory.slice(startIdx, endIdx);
+                    const minPrice = Math.min(...visiblePrices.map(p => p.low));
+                    const maxPrice = Math.max(...visiblePrices.map(p => p.high));
+                    const priceRange = maxPrice - minPrice;
+                    const priceAtCursor = maxPrice - (y / height) * priceRange;
+                    const dataPointWidth = chartCanvas.width / visiblePrices.length;
+                    const dataIndex = Math.floor(x / dataPointWidth);
+                    if (dataIndex >= 0 && dataIndex < visiblePrices.length) {
+                        const displayPrice = visiblePrices[dataIndex].close;
+                        debugInfo.textContent = `Price: $${displayPrice.toFixed(2)} at pos: ${dataIndex + startIdx}`;
+                        priceLabel.textContent = `$${displayPrice.toFixed(2)}`;
+                        priceLabel.style.left = `${x + 10}px`;
+                        priceLabel.style.top = `${y - 20}px`;
+                        priceLabel.style.display = 'block';
+                    }
                 }
             });
             
-            // Add padding
-            const padding = (maxPrice - minPrice) * 0.05;
-            minPrice = minPrice - padding;
-            maxPrice = maxPrice + padding;
-            const priceRange = maxPrice - minPrice;
-            
-            // Calculate price at cursor Y position
-            const priceAtCursor = maxPrice - (y / height) * priceRange;
-            
-            // Calculate index at cursor X position
-            const dataPointWidth = chartCanvas.width / visiblePrices.length;
-            const dataIndex = Math.floor(x / dataPointWidth);
-            
-            if (dataIndex >= 0 && dataIndex < visiblePrices.length) {
-                const dataAtCursor = visiblePrices[dataIndex];
-                let displayPrice;
-                
-                if (typeof dataAtCursor === 'number') {
-                    displayPrice = dataAtCursor;
-                } else if (dataAtCursor && typeof dataAtCursor === 'object') {
-                    displayPrice = dataAtCursor.close !== undefined ? dataAtCursor.close : priceAtCursor;
-                } else {
-                    displayPrice = priceAtCursor;
-                }
-                
-                // Update debug info with more precise details
-                debugInfo.textContent = `Price: $${displayPrice.toFixed(2)} at pos: ${dataIndex + startIdx}`;
-                
-                // Update price label
-                priceLabel.textContent = `$${displayPrice.toFixed(2)}`;
-                priceLabel.style.left = `${x + 10}px`;
-                priceLabel.style.top = `${y - 20}px`;
-                priceLabel.style.display = 'block';
-            }
+            chartCanvas.addEventListener('mouseleave', () => {
+                verticalLine.style.display = 'none';
+                horizontalLine.style.display = 'none';
+                priceLabel.style.display = 'none';
+            });
         }
-    });
-    
-    // Mouse leave event to hide crosshair
-    chartCanvas.addEventListener('mouseleave', () => {
-        verticalLine.style.display = 'none';
-        horizontalLine.style.display = 'none';
-        priceLabel.style.display = 'none';
-    });
-}
-
-// Execute on load
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        addCrosshairTracking();
-    }, 1000); // Allow time for other scripts to initialize
-});
     </script>
 </body>
 </html>
