@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Simulator - Bybit-style Futures Trading</title>
+    <style>
+        :root {
+            --primary: #1E2329;
+            --secondary: #252930;
+            --accent: #F0B90B;
+            --text: #F8F9FA;
+            --text-secondary: #848E9C;
+            --green: #02C076;
+            --red: #F6465D;
+            --border: #343A40;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--primary);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: var(--secondary);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .user-balance {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .balance-item {
+            background-color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+        }
+        
+        .balance-item .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .balance-item .value {
+            font-weight: bold;
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+        }
+        
+        .chart-container {
+            flex: 1;
+            padding: 1rem;
+            border-right: 1px solid var(--border);
+            min-height: 500px;
+            overflow: hidden;
+        }
+        
+        .chart {
+            width: 100%;
+            height: 400px;
+            background-color: var(--secondary);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .chart canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .price-info {
+            display: flex;
+            margin-top: 0.5rem;
+            gap: 1rem;
+        }
+        
+        .price-label {
+            font-size: 0.75rem;
+            color: var (--text-secondary);
+        }
+        
+        .price-value {
+            font-weight: bold;
+        }
+        
+        .up {
+            color: var(--green);
+        }
+        
+        .down {
+            color: var(--red);
+        }
+        
+        .trading-panel {
+            width: 350px;
+            background-color: var(--secondary);
+            padding: 1rem;
+            border-left: 1px solid var(--border);
+        }
+        
+        .panel-tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        
+        .tab.active {
+            color: var (--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .leverage-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .leverage-option {
+            padding: 0.5rem;
+            background-color: var(--primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .leverage-option.active {
+            background-color: var(--accent);
+            color: var(--primary);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn-buy {
+            background-color: var(--green);
+            color: white;
+        }
+        
+        .btn-sell {
+            background-color: var(--red);
+            color: white;
+        }
+        
+        .order-book-container {
+            margin-top: 2rem;
+        }
+        
+        .order-book-title {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .order-book {
+            background-color: var(--primary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .order-header {
+            display: flex;
+            padding: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .order-book-column {
+            flex: 1;
+            text-align: right;
+        }
+        
+        .order-book-column:first-child {
+            text-align: left;
+        }
+        
+        .ask, .bid {
+            display: flex;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .ask {
+            color: var(--red);
+        }
+        
+        .bid {
+            color: var(--green);
+        }
+        
+        .order-volume {
+            position: relative;
+        }
+        
+        .volume-bar {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            z-index: 0;
+            opacity: 0.2;
+        }
+        
+        .ask .volume-bar {
+            background-color: var(--red);
+        }
+        
+        .bid .volume-bar {
+            background-color: var(--green);
+        }
+        
+        .positions-container {
+            margin-top: 2rem;
+        }
+        
+        .positions-title {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .position {
+            background-color: var(--primary);
+            border-radius: 4px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .position-symbol {
+            font-weight: bold;
+        }
+        
+        .position-type {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        
+        .position-type.long {
+            background-color: rgba(2, 192, 118, 0.2);
+            color: var(--green);
+        }
+        
+        .position-type.short {
+            background-color: rgba(246, 70, 93, 0.2);
+            color: var(--red);
+        }
+        
+        .position-details {
+            display: flex;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .position-pnl {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .close-position {
+            background-color: var(--border);
+            border: none;
+            color: var(--text);
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .no-position {
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 1rem;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: var(--secondary);
+            width: 400px;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .settings-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .settings-title {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .api-note {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: rgba(240, 185, 11, 0.1);
+            border-left: 3px solid var(--accent);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .btn-save {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--accent);
+            color: var(--primary);
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .trading-panel {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--border);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">TradeSim</div>
+        <div class="user-balance">
+            <div class="balance-item">
+                <div class="label">Balance</div>
+                <div class="value" id="user-balance">$10,000.00</div>
+            </div>
+            <div class="balance-item">
+                <div class="label">Available</div>
+                <div class="value" id="available-balance">$10,000.00</div>
+            </div>
+            <button id="settings-btn" class="balance-item">
+                <div class="label">Settings</div>
+            </button>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="chart-container">
+            <div class="symbol-selector">
+                <select id="trading-pair">
+                    <option value="BTCUSDT">BTC/USDT</option>
+                    <option value="ETHUSDT">ETH/USDT</option>
+                    <option value="SOLUSDT">SOL/USDT</option>
+                    <option value="BNBUSDT">BNB/USDT</option>
+                    <option value="XRPUSDT">XRP/USDT</option>
+                    <option value="ADAUSDT">ADA/USDT</option>
+                    <option value="DOTUSDT">DOT/USDT</option>
+                    <option value="DOGEUSDT">DOGE/USDT</option>
+                    <option value="MATICUSDT">MATIC/USDT</option>
+                    <option value="LINKUSDT">LINK/USDT</option>
+                </select>
+            </div>
+            <div class="chart" id="price-chart">
+                <canvas id="chart-canvas"></canvas>
+            </div>
+            <div class="price-info">
+                <div>
+                    <div class="price-label">Last Price</div>
+                    <div class="price-value up" id="current-price">$45,678.90</div>
+                </div>
+                <div>
+                    <div class="price-label">24h Change</div>
+                    <div class="price-value up" id="price-change">+2.34%</div>
+                </div>
+                <div>
+                    <div class="price-label">24h High</div>
+                    <div class="price-value" id="price-high">$46,123.45</div>
+                </div>
+                <div>
+                    <div class="price-label">24h Low</div>
+                    <div class="price-value" id="price-low">$44,789.12</div>
+                </div>
+                <div>
+                    <div class="price-label">24h Volume</div>
+                    <div class="price-value" id="volume">$1.23B</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="trading-panel">
+            <div class="panel-tabs">
+                <div class="tab active" data-tab="market">Market</div>
+                <div class="tab" data-tab="limit">Limit</div>
+                <div class="tab" data-tab="conditional">Conditional</div>
+            </div>
+            
+            <div class="order-form">
+                <div class="form-group">
+                    <label for="order-type">Order Type</label>
+                    <select id="order-type">
+                        <option value="market">Market</option>
+                        <option value="limit">Limit</option>
+                        <option value="conditional">Conditional</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="leverage">Leverage</label>
+                    <div class="leverage-selector">
+                        <div class="leverage-option" data-leverage="1">1x</div>
+                        <div class="leverage-option" data-leverage="5">5x</div>
+                        <div class="leverage-option active" data-leverage="10">10x</div>
+                        <div class="leverage-option" data-leverage="20">20x</div>
+                        <div class="leverage-option" data-leverage="50">50x</div>
+                    </div>
+                    <input type="range" id="leverage-slider" min="1" max="100" value="10">
+                </div>
+                
+                <div class="form-group">
+                    <label for="order-size">Order Size (USDT)</label>
+                    <input type="number" id="order-size" placeholder="Enter amount" value="100">
+                </div>
+                
+                <div class="form-group" id="limit-price-container" style="display: none;">
+                    <label for="limit-price">Limit Price (USDT)</label>
+                    <input type="number" id="limit-price" placeholder="Enter price">
+                </div>
+                
+                <div class="form-group" id="trigger-price-container" style="display: none;">
+                    <label for="trigger-price">Trigger Price (USDT)</label>
+                    <input type="number" id="trigger-price" placeholder="Enter trigger price">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-buy" id="buy-btn">Buy/Long</button>
+                    <button class="btn btn-sell" id="sell-btn">Sell/Short</button>
+                </div>
+            </div>
+            
+            <div class="order-book-container">
+                <div class="order-book-title">Order Book</div>
+                <div class="order-book">
+                    <div class="order-header">
+                        <div class="order-book-column">Price (USDT)</div>
+                        <div class="order-book-column">Size (BTC)</div>
+                        <div class="order-book-column">Total</div>
+                    </div>
+                    <div id="asks-container">
+                        <!-- Ask orders will be populated by JavaScript -->
+                    </div>
+                    <div id="bids-container">
+                        <!-- Bid orders will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="positions-container">
+                <div class="positions-title">Positions</div>
+                <div id="positions-container">
+                    <div class="no-position" id="no-positions-message">No open positions</div>
+                    <!-- Positions will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Settings</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-title">Initial Balance</div>
+                <input type="number" id="initial-balance" value="10000">
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-title">Price Update Interval</div>
+                <select id="price-update-interval">
+                    <option value="10000">10 seconds</option>
+                    <option value="15000" selected>15 seconds</option>
+                    <option value="30000">30 seconds</option>
+                    <option value="60000">60 seconds</option>
+                </select>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-title">Market Volatility</div>
+                <select id="market-volatility">
+                    <option value="0.5">Low</option>
+                    <option value="1" selected>Normal</option>
+                    <option value="2">High</option>
+                </select>
+            </div>
+            
+            <div class="api-note">
+                Note: This simulator uses the free CoinGecko API which has rate limits. 
+                Please keep the update interval to at least 10 seconds to avoid hitting rate limits.
+            </div>
+            
+            <button class="btn-save" id="save-settings">Save Changes</button>
+        </div>
+    </div>
+
+    <script>
+        // Trading simulator main JavaScript code
+        document.addEventListener('DOMContentLoaded', async () => {
+            initChart();
+            await fetchHistoricalData();
+            await fetchCurrentPrice();
+            startPriceUpdates();
+        });
+        
+        // Global variables
+        let currentPrice = 45000; // Initial default price
+        let initialBalance = 10000;
+        let userBalance = initialBalance;
+        let availableBalance = initialBalance;
+        let currentLeverage = 10;
+        let positions = [];
+        let priceHistory = [];
+        let orderBook = [];
+        let selectedPair = 'bitcoin';
+        let displayPair = 'BTCUSDT'; // For display purposes
+        let orderType = 'market';
+        let updateInterval = 15000; // 15 seconds to respect API rate limits
+        let volatilityMultiplier = 1.0; // Market volatility setting
+        let priceUpdateInterval;
+        let chartUpdateInterval;
+        let chartContext;
+        let historicalDataLoaded = false;
+        
+        // CoinGecko API endpoints
+        const COINGECKO_API = {
+            PRICE: 'https://api.coingecko.com/api/v3/simple/price',
+            COINS: 'https://api.coingecko.com/api/v3/coins/list',
+            MARKET_CHART: 'https://api.coingecko.com/api/v3/coins/{id}/market_chart',
+            COIN_DATA: 'https://api.coingecko.com/api/v3/coins/{id}'
+        };
+        
+        // Mapping of trading pairs to CoinGecko IDs
+        const TRADING_PAIRS = {
+            'BTCUSDT': 'bitcoin',
+            'ETHUSDT': 'ethereum',
+            'SOLUSDT': 'solana',
+            'BNBUSDT': 'binancecoin',
+            'XRPUSDT': 'ripple',
+            'ADAUSDT': 'cardano',
+            'DOTUSDT': 'polkadot',
+            'DOGEUSDT': 'dogecoin',
+            'MATICUSDT': 'matic-network',
+            'LINKUSDT': 'chainlink'
+        };
+        
+        // Reverse mapping for display
+        const COINGECKO_TO_PAIR = {};
+        Object.keys(TRADING_PAIRS).forEach(pair => {
+            COINGECKO_TO_PAIR[TRADING_PAIRS[pair]] = pair;
+        });
+        
+        // DOM Elements
+        const userBalanceElement = document.getElementById('user-balance');
+        const availableBalanceElement = document.getElementById('available-balance');
+        const currentPriceElement = document.getElementById('current-price');
+        const priceChangeElement = document.getElementById('price-change');
+        const priceHighElement = document.getElementById('price-high');
+        const priceLowElement = document.getElementById('price-low');
+        const volumeElement = document.getElementById('volume');
+        const leverageOptions = document.querySelectorAll('.leverage-option');
+        const leverageSlider = document.getElementById('leverage-slider');
+        const orderSizeInput = document.getElementById('order-size');
+        const limitPriceInput = document.getElementById('limit-price');
+        const triggerPriceInput = document.getElementById('trigger-price');
+        const limitPriceContainer = document.getElementById('limit-price-container');
+        const triggerPriceContainer = document.getElementById('trigger-price-container');
+        const buyButton = document.getElementById('buy-btn');
+        const sellButton = document.getElementById('sell-btn');
+        const tradingPairSelect = document.getElementById('trading-pair');
+        const orderTypeSelect = document.getElementById('order-type');
+        const positionsContainer = document.getElementById('positions-container');
+        const noPositionsMessage = document.getElementById('no-positions-message');
+        const asksContainer = document.getElementById('asks-container');
+        const bidsContainer = document.getElementById('bids-container');
+        const settingsButton = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeModalButton = document.querySelector('.close-modal');
+        const saveSettingsButton = document.getElementById('save-settings');
+        const initialBalanceInput = document.getElementById('initial-balance');
+        const priceUpdateIntervalSelect = document.getElementById('price-update-interval');
+        const marketVolatilitySelect = document.getElementById('market-volatility');
+        const orderTabs = document.querySelectorAll('.tab');
+        const chartCanvas = document.getElementById('chart-canvas');
+        
+        // Initialize the chart
+        function initChart() {
+            chartContext = chartCanvas.getContext('2d');
+            // Set canvas size
+            chartCanvas.width = chartCanvas.offsetWidth;
+            chartCanvas.height = chartCanvas.offsetHeight;
+            
+            // Generate initial price history
+            for (let i = 0; i < 100; i++) {
+                priceHistory.push(currentPrice * (0.98 + Math.random() * 0.04));
+            }
+            
+            drawChart();
+        }
+        
+        // Draw the candlestick chart
+        function drawChart() {
+            const ctx = chartContext;
+            const width = chartCanvas.width;
+            const height = chartCanvas.height;
+        
+            // Clear the canvas
+            ctx.clearRect(0, 0, width, height);
+        
+            // Calculate min and max price for scaling
+            const prices = [...priceHistory];
+            const minPrice = Math.min(...prices.map(p => p.low)) * 0.999;
+            const maxPrice = Math.max(...prices.map(p => p.high)) * 1.001;
+            const priceRange = maxPrice - minPrice;
+        
+            // Draw grid
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+        
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = Math.floor(height * (i / 5));
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+        
+                // Draw price labels
+                const price = maxPrice - (i / 5) * priceRange;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(price.toFixed(2), 5, y - 5);
+            }
+        
+            // Vertical grid lines
+            for (let i = 0; i <= 5; i++) {
+                const x = Math.floor(width * (i / 5));
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+            }
+        
+            ctx.stroke();
+        
+            // Draw candlesticks
+            const barWidth = width / prices.length;
+        
+            prices.forEach((price, index) => {
+                const x = index * barWidth;
+                const openY = height - (price.open - minPrice) / priceRange * height;
+                const closeY = height - (price.close - minPrice) / priceRange * height;
+                const highY = height - (price.high - minPrice) / priceRange * height;
+                const lowY = height - (price.low - minPrice) / priceRange * height;
+        
+                // Determine candlestick color
+                const isBullish = price.close > price.open;
+                ctx.fillStyle = isBullish ? '#02C076' : '#F6465D';
+                ctx.strokeStyle = ctx.fillStyle;
+        
+                // Draw wick
+                ctx.beginPath();
+                ctx.moveTo(x + barWidth / 2, highY);
+                ctx.lineTo(x + barWidth / 2, lowY);
+                ctx.stroke();
+        
+                // Draw body
+                const bodyHeight = Math.abs(closeY - openY);
+                const bodyY = Math.min(openY, closeY);
+                ctx.fillRect(x + barWidth * 0.2, bodyY, barWidth * 0.6, bodyHeight);
+            });
+        }
+        
+        // Fetch current price from CoinGecko API
+        async function fetchCurrentPrice() {
+            try {
+                const params = new URLSearchParams({
+                    ids: selectedPair,
+                    vs_currencies: 'usd',
+                    include_24hr_change: 'true',
+                    include_24hr_vol: 'true',
+                    include_market_cap: 'true',
+                    include_24h_high: 'true',
+                    include_24h_low: 'true'
+                });
+                
+                const response = await fetch(`${COINGECKO_API.PRICE}?${params.toString()}`);
+                
+                if (!response.ok) {
+                    console.error('API request failed:', response.status);
+                    // Use last known price if available, otherwise use placeholder
+                    if (currentPrice === 0) {
+                        currentPrice = 45000; // Placeholder price
+                    }
+                    // Generate simulated price movement for offline demonstration
+                    simulatePriceMovement();
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data[selectedPair]) {
+                    const previousPrice = currentPrice;
+                    currentPrice = data[selectedPair].usd;
+                    
+                    // If this is the first price update and we don't have price history
+                    if (!historicalDataLoaded) {
+                        await fetchHistoricalData();
+                    } else {
+                        // Add current price to history
+                        priceHistory.push(currentPrice);
+                        if (priceHistory.length > 100) {
+                            priceHistory.shift();
+                        }
+                    }
+                    
+                    // Update UI with price data
+                    updatePriceUI(data[selectedPair], previousPrice);
+                } else {
+                    // If data doesn't contain our selected pair, simulate price
+                    simulatePriceMovement();
+                }
+            } catch (error) {
+                console.error('Error fetching price:', error);
+                // Use simulated price for offline/error cases
+                simulatePriceMovement();
+            }
+        }
+        
+        // Simulate price movement when API fails
+        function simulatePriceMovement() {
+            const previousPrice = currentPrice;
+
+            // Generate a random price movement with volatility multiplier
+            const changePercent = (Math.random() * 0.02 - 0.01) * volatilityMultiplier;
+            currentPrice = currentPrice * (1 + changePercent);
+
+            // Generate candlestick data
+            const open = previousPrice;
+            const close = currentPrice;
+            const high = Math.max(open, close) * (1 + Math.random() * 0.01);
+            const low = Math.min(open, close) * (1 - Math.random() * 0.01);
+
+            // Add to price history
+            priceHistory.push({ open, high, low, close });
+            if (priceHistory.length > 100) {
+                priceHistory.shift();
+            }
+
+            // Calculate 24h high/low from local data
+            const high24h = Math.max(...priceHistory.map(p => p.high));
+            const low24h = Math.min(...priceHistory.map(p => p.low));
+
+            // Simulate 24h change
+            const priceStart = priceHistory[0].open;
+            const priceChange = ((currentPrice - priceStart) / priceStart) * 100;
+
+            // Update UI
+            currentPriceElement.textContent = `${currentPrice.toFixed(2)}`;
+
+            // Determine if price is up or down from previous
+            if (currentPrice > previousPrice) {
+                currentPriceElement.className = 'price-value up';
+            } else if (currentPrice < previousPrice) {
+                currentPriceElement.className = 'price-value down';
+            } else {
+                currentPriceElement.className = 'price-value';
+            }
+
+            // Update 24h high/low and change in the UI
+            priceHighElement.textContent = `${high24h.toFixed(2)}`;
+            priceLowElement.textContent = `${low24h.toFixed(2)}`;
+            priceChangeElement.textContent = `${priceChange.toFixed(2)}%`;
+
+            // Update the change color based on positive or negative change
+            if (priceChange > 0) {
+                priceChangeElement.className = 'price-value up';
+            } else if (priceChange < 0) {
+                priceChangeElement.className = 'price-value down';
+            } else {
+                priceChangeElement.className = 'price-value';
+            }
+
+            // Redraw the chart with the updated price history
+            drawChart();
+        }
+
+        function updatePriceUI(priceData, previousPrice) {
+            // Update current price
+            currentPriceElement.textContent = `${currentPrice.toFixed(2)}`;
+        
+            // Determine if price is up or down
+            if (currentPrice > previousPrice) {
+                currentPriceElement.className = 'price-value up';
+            } else if (currentPrice < previousPrice) {
+                currentPriceElement.className = 'price-value down';
+            } else {
+                currentPriceElement.className = 'price-value';
+            }
+        
+            // Update 24h high/low and change
+            priceHighElement.textContent = `${priceData.high_24h.toFixed(2)}`;
+            priceLowElement.textContent = `${priceData.low_24h.toFixed(2)}`;
+            priceChangeElement.textContent = `${priceData.price_change_percentage_24h.toFixed(2)}%`;
+        
+            // Update change color
+            if (priceData.price_change_percentage_24h > 0) {
+                priceChangeElement.className = 'price-value up';
+            } else if (priceData.price_change_percentage_24h < 0) {
+                priceChangeElement.className = 'price-value down';
+            } else {
+                priceChangeElement.className = 'price-value';
+            }
+        }
+        
+        // Fetch historical data for the selected pair
+        async function fetchHistoricalData() {
+            try {
+                const response = await fetch(COINGECKO_API.MARKET_CHART.replace('{id}', selectedPair) + '?vs_currency=usd&days=1');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch historical data');
+                }
+
+                const data = await response.json();
+                const prices = data.prices;
+
+                // Populate price history with candlestick data
+                priceHistory = prices.map((price, index) => {
+                    const open = index === 0 ? price[1] : prices[index - 1][1];
+                    const close = price[1];
+                    const high = Math.max(open, close);
+                    const low = Math.min(open, close);
+                    return { open, high, low, close };
+                });
+                historicalDataLoaded = true;
+
+                // Redraw the chart with historical data
+                drawChart();
+            } catch (error) {
+                console.error('Error fetching historical data:', error);
+            }
+        }
+        
+        // Event listeners
+        settingsButton.addEventListener('click', () => {
+            settingsModal.style.display = 'flex';
+        });
+        
+        closeModalButton.addEventListener('click', () => {
+            settingsModal.style.display = 'none';
+        });
+        
+        saveSettingsButton.addEventListener('click', () => {
+            // Update initial balance
+            initialBalance = parseFloat(initialBalanceInput.value) || initialBalance;
+            userBalance = initialBalance;
+            availableBalance = initialBalance;
+            userBalanceElement.textContent = `$${userBalance.toFixed(2)}`;
+            availableBalanceElement.textContent = `$${availableBalance.toFixed(2)}`;
+
+            // Update price update interval
+            updateInterval = parseInt(priceUpdateIntervalSelect.value, 10) || updateInterval;
+
+            // Update volatility multiplier
+            volatilityMultiplier = parseFloat(marketVolatilitySelect.value) || volatilityMultiplier;
+
+            // Close modal
+            settingsModal.style.display = 'none';
+        });
+        
+        orderTypeSelect.addEventListener('change', (event) => {
+            orderType = event.target.value;
+            if (orderType === 'limit') {
+                limitPriceContainer.style.display = 'block';
+                triggerPriceContainer.style.display = 'none';
+            } else if (orderType === 'conditional') {
+                limitPriceContainer.style.display = 'block';
+                triggerPriceContainer.style.display = 'block';
+            } else {
+                limitPriceContainer.style.display = 'none';
+                triggerPriceContainer.style.display = 'none';
+            }
+        });
+        
+        leverageOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                leverageOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                currentLeverage = parseInt(option.dataset.leverage);
+                leverageSlider.value = currentLeverage;
+            });
+        });
+        
+        leverageSlider.addEventListener('input', (event) => {
+            currentLeverage = parseInt(event.target.value);
+            leverageOptions.forEach(opt => opt.classList.remove('active'));
+            leverageOptions.forEach(opt => {
+                if (parseInt(opt.dataset.leverage) === currentLeverage) {
+                    opt.classList.add('active');
+                }
+            });
+        });
+        
+        tradingPairSelect.addEventListener('change', async (event) => {
+            selectedPair = TRADING_PAIRS[event.target.value];
+            displayPair = event.target.value;
+
+            // Reset price history and fetch new data
+            priceHistory = [];
+            historicalDataLoaded = false;
+            await fetchHistoricalData();
+            await fetchCurrentPrice();
+        });
+        
+        buyButton.addEventListener('click', () => {
+            placeOrder('buy');
+        });
+        
+        sellButton.addEventListener('click', () => {
+            placeOrder('sell');
+        });
+        
+        // Place an order
+        function placeOrder(type) {
+            const orderSize = parseFloat(orderSizeInput.value);
+            const limitPrice = parseFloat(limitPriceInput.value);
+            const triggerPrice = parseFloat(triggerPriceInput.value);
+            
+            if (isNaN(orderSize) || orderSize <= 0) {
+                alert('Please enter a valid order size.');
+                return;
+            }
+            
+            if (orderType === 'limit' && (isNaN(limitPrice) || limitPrice <= 0)) {
+                alert('Please enter a valid limit price.');
+                return;
+            }
+            
+            if (orderType === 'conditional' && (isNaN(triggerPrice) || triggerPrice <= 0)) {
+                alert('Please enter a valid trigger price.');
+                return;
+            }
+            
+            const order = {
+                type,
+                size: orderSize,
+                leverage: currentLeverage,
+                pair: displayPair,
+                orderType,
+                limitPrice: orderType === 'limit' ? limitPrice : null,
+                triggerPrice: orderType === 'conditional' ? triggerPrice : null,
+                entryPrice: currentPrice,
+                timestamp: Date.now()
+            };
+            
+            // Check if there's enough balance
+            const requiredMargin = (orderSize / currentLeverage);
+            if (availableBalance < requiredMargin) {
+                alert('Insufficient balance to place this order.');
+                return;
+            }
+            
+            // Deduct margin from available balance
+            availableBalance -= requiredMargin;
+            availableBalanceElement.textContent = `$${availableBalance.toFixed(2)}`;
+            
+            // Add order to positions
+            positions.push(order);
+            updatePositionsUI();
+        }
+        
+        // Update positions UI
+        function updatePositionsUI() {
+            positionsContainer.innerHTML = '';
+            
+            if (positions.length === 0) {
+                noPositionsMessage.style.display = 'block';
+                return;
+            }
+            
+            noPositionsMessage.style.display = 'none';
+            
+            positions.forEach(position => {
+                const positionElement = document.createElement('div');
+                positionElement.className = 'position';
+                
+                const positionHeader = document.createElement('div');
+                positionHeader.className = 'position-header';
+                
+                const positionSymbol = document.createElement('div');
+                positionSymbol.className = 'position-symbol';
+                positionSymbol.textContent = position.pair;
+                
+                const positionType = document.createElement('div');
+                positionType.className = `position-type ${position.type}`;
+                positionType.textContent = position.type === 'buy' ? 'Long' : 'Short';
+                
+                positionHeader.appendChild(positionSymbol);
+                positionHeader.appendChild(positionType);
+                
+                const positionDetails = document.createElement('div');
+                positionDetails.className = 'position-details';
+                
+                const entryPrice = document.createElement('div');
+                entryPrice.textContent = `Entry: $${position.entryPrice.toFixed(2)}`;
+                
+                const leverage = document.createElement('div');
+                leverage.textContent = `Leverage: ${position.leverage}x`;
+                
+                const size = document.createElement('div');
+                size.textContent = `Size: ${position.size} USDT`;
+                
+                positionDetails.appendChild(entryPrice);
+                positionDetails.appendChild(leverage);
+                positionDetails.appendChild(size);
+                
+                const positionPnl = document.createElement('div');
+                positionPnl.className = 'position-pnl';
+                
+                const pnl = document.createElement('div');
+                const currentPnl = (currentPrice - position.entryPrice) * position.size / position.entryPrice * position.leverage;
+                pnl.textContent = `PnL: $${currentPnl.toFixed(2)}`;
+                pnl.className = currentPnl >= 0 ? 'up' : 'down';
+                
+                const closeButton = document.createElement('button');
+                closeButton.className = 'close-position';
+                closeButton.textContent = 'Close';
+                closeButton.addEventListener('click', () => {
+                    closePosition(position);
+                });
+                
+                positionPnl.appendChild(pnl);
+                positionPnl.appendChild(closeButton);
+                
+                positionElement.appendChild(positionHeader);
+                positionElement.appendChild(positionDetails);
+                positionElement.appendChild(positionPnl);
+                
+                positionsContainer.appendChild(positionElement);
+            });
+        }
+        
+        // Close a position
+        function closePosition(position) {
+            const index = positions.indexOf(position);
+            if (index !== -1) {
+                positions.splice(index, 1);
+                
+                // Release margin back to available balance
+                const requiredMargin = (position.size / position.leverage);
+                availableBalance += requiredMargin;
+                availableBalanceElement.textContent = `$${availableBalance.toFixed(2)}`;
+                
+                updatePositionsUI();
+            }
+        }
+        
+        // Initial setup
+        userBalanceElement.textContent = `$${userBalance.toFixed(2)}`;
+        availableBalanceElement.textContent = `$${availableBalance.toFixed(2)}`;
+        priceUpdateInterval = setInterval(fetchCurrentPrice, updateInterval);
+        initChart();
+
+        function startPriceUpdates() {
+            if (priceUpdateInterval) {
+                clearInterval(priceUpdateInterval);
+            }
+
+            priceUpdateInterval = setInterval(fetchCurrentPrice, updateInterval);
+        }
+
+        // Start updates on page load
+        startPriceUpdates();
+
+        // Cache data in localStorage
+        try {
+            localStorage.setItem(`football_api:${cacheKey}`, JSON.stringify(storageData));
+        } catch (e) {
+            console.warn('Failed to cache in localStorage', e);
+        }
+        // Enhanced Trading Simulator Chart Code
+document.addEventListener('DOMContentLoaded', async () => {
+    // Add zoom controls to the chart container
+    const chartContainer = document.querySelector('.chart-container');
+    const zoomControlsHTML = `
+        <div class="chart-controls">
+            <button id="zoom-in" class="chart-btn">+</button>
+            <button id="zoom-out" class="chart-btn">-</button>
+            <button id="reset-zoom" class="chart-btn">Reset</button>
+            <div class="debug-info" id="debug-info">Price: $0</div>
+        </div>
+    `;
+    
+    // Insert the zoom controls before the chart
+    const chartDiv = document.querySelector('.chart');
+    chartDiv.insertAdjacentHTML('beforebegin', zoomControlsHTML);
+    
+    // Add styles for the chart controls
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .chart-btn {
+            background-color: var(--secondary);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .chart-btn:hover {
+            background-color: var(--accent);
+            color: var(--primary);
+        }
+        
+        .debug-info {
+            margin-left: auto;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        .chart canvas {
+            cursor: grab;
+        }
+        
+        .chart canvas:active {
+            cursor: grabbing;
+        }
+    `;
+    document.head.appendChild(styleElement);
+    
+    // Initialize enhanced chart functionality
+    initEnhancedChart();
+});
+
+// Enhanced chart functionality with zooming and panning
+function initEnhancedChart() {
+    // Global chart variables
+    let zoomLevel = 1;
+    let panOffsetX = 0;
+    let isPanning = false;
+    let lastMouseX = 0;
+    const MAX_ZOOM = 5;
+    const MIN_ZOOM = 0.5;
+    let visibleDataPoints = 100; // Default number of visible points
+    let debugInfo = document.getElementById('debug-info');
+    
+    // Get chart DOM elements
+    const chartCanvas = document.getElementById('chart-canvas');
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    const resetZoomBtn = document.getElementById('reset-zoom');
+    
+    // Override the drawChart function to support zooming and panning
+    window.drawChart = function() {
+        const ctx = chartContext;
+        const width = chartCanvas.width;
+        const height = chartCanvas.height;
+        
+        // Clear the canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        if (!priceHistory || priceHistory.length === 0) {
+            return;
+        }
+        
+        // Apply zoom to visible data points
+        visibleDataPoints = Math.max(20, Math.floor(100 / zoomLevel));
+        
+        // Calculate visible range with panning
+        let startIdx = Math.max(0, priceHistory.length - visibleDataPoints - panOffsetX);
+        let endIdx = Math.min(priceHistory.length, startIdx + visibleDataPoints);
+        
+        // Ensure we have valid bounds
+        if (startIdx >= endIdx) {
+            startIdx = Math.max(0, endIdx - 20);
+        }
+        
+        // Get visible prices
+        const visiblePrices = priceHistory.slice(startIdx, endIdx);
+        
+        // Calculate min and max price for scaling
+        let minPrice = Number.MAX_VALUE;
+        let maxPrice = Number.MIN_VALUE;
+        
+        visiblePrices.forEach(price => {
+            if (typeof price === 'number') {
+                // Simple price point
+                minPrice = Math.min(minPrice, price);
+                maxPrice = Math.max(maxPrice, price);
+            } else if (price && typeof price === 'object') {
+                // Candlestick data
+                if (price.low !== undefined) minPrice = Math.min(minPrice, price.low);
+                if (price.high !== undefined) maxPrice = Math.max(maxPrice, price.high);
+                if (price.open !== undefined) {
+                    minPrice = Math.min(minPrice, price.open);
+                    maxPrice = Math.max(maxPrice, price.open);
+                }
+                if (price.close !== undefined) {
+                    minPrice = Math.min(minPrice, price.close);
+                    maxPrice = Math.max(maxPrice, price.close);
+                }
+            }
+        });
+        
+        // Add padding to price range
+        const padding = (maxPrice - minPrice) * 0.05;
+        minPrice = minPrice - padding;
+        maxPrice = maxPrice + padding;
+        const priceRange = maxPrice - minPrice;
+        
+        // Draw grid
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        
+        // Horizontal grid lines with price labels
+        for (let i = 0; i <= 5; i++) {
+            const y = Math.floor(height * (i / 5));
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            
+            // Draw price labels
+            const price = maxPrice - (i / 5) * priceRange;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(price.toFixed(2), 5, y - 5);
+        }
+        
+        // Vertical grid lines with time labels (every 10 points)
+        const timeStep = Math.max(1, Math.floor(visiblePrices.length / 10));
+        for (let i = 0; i < visiblePrices.length; i += timeStep) {
+            const x = Math.floor(width * (i / visiblePrices.length));
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            
+            // Draw time labels (could be enhanced with actual timestamps)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            const indexLabel = startIdx + i;
+            ctx.fillText(indexLabel, x, height - 5);
+        }
+        
+        ctx.stroke();
+        
+        // Draw candlesticks
+        const barWidth = width / visiblePrices.length;
+        
+        visiblePrices.forEach((price, index) => {
+            const x = index * barWidth;
+            
+            // Handle both types of price data (simple number or candlestick object)
+            if (typeof price === 'number') {
+                // Simple price point - draw as line
+                const y = height - (price - minPrice) / priceRange * height;
+                if (index > 0) {
+                    const prevY = height - (visiblePrices[index-1] - minPrice) / priceRange * height;
+                    ctx.beginPath();
+                    ctx.strokeStyle = price > visiblePrices[index-1] ? '#02C076' : '#F6465D';
+                    ctx.lineWidth = 2;
+                    ctx.moveTo(x - barWidth, prevY);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                }
+            } else if (price && typeof price === 'object') {
+                // Candlestick data
+                if (price.open !== undefined && price.close !== undefined) {
+                    const openY = height - (price.open - minPrice) / priceRange * height;
+                    const closeY = height - (price.close - minPrice) / priceRange * height;
+                    
+                    // Use high/low if available, otherwise use open/close
+                    const highY = price.high !== undefined ? 
+                        height - (price.high - minPrice) / priceRange * height : 
+                        Math.min(openY, closeY);
+                    
+                    const lowY = price.low !== undefined ? 
+                        height - (price.low - minPrice) / priceRange * height : 
+                        Math.max(openY, closeY);
+                    
+                    // Determine candlestick color
+                    const isBullish = price.close > price.open;
+                    ctx.fillStyle = isBullish ? '#02C076' : '#F6465D';
+                    ctx.strokeStyle = ctx.fillStyle;
+                    
+                    // Draw wick
+                    ctx.beginPath();
+                    ctx.moveTo(x + barWidth / 2, highY);
+                    ctx.lineTo(x + barWidth / 2, lowY);
+                    ctx.stroke();
+                    
+                    // Draw body
+                    const bodyHeight = Math.abs(closeY - openY);
+                    const bodyY = Math.min(openY, closeY);
+                    ctx.fillRect(x + barWidth * 0.2, bodyY, barWidth * 0.6, bodyHeight);
+                }
+            }
+        });
+        
+        // Update debug info
+        if (visiblePrices.length > 0) {
+            const lastPrice = visiblePrices[visiblePrices.length - 1];
+            let priceValue;
+            
+            if (typeof lastPrice === 'number') {
+                priceValue = lastPrice;
+            } else if (lastPrice && typeof lastPrice === 'object') {
+                priceValue = lastPrice.close !== undefined ? lastPrice.close : currentPrice;
+            } else {
+                priceValue = currentPrice;
+            }
+            
+            debugInfo.textContent = `Price: $${priceValue.toFixed(2)} | Zoom: ${zoomLevel.toFixed(1)}x | Points: ${visiblePrices.length}`;
+        }
+    };
+    
+    // Add event listeners for zooming and panning
+    
+    // Zoom in button
+    zoomInBtn.addEventListener('click', () => {
+        zoomLevel = Math.min(MAX_ZOOM, zoomLevel * 1.2);
+        drawChart();
+    });
+    
+    // Zoom out button
+    zoomOutBtn.addEventListener('click', () => {
+        zoomLevel = Math.max(MIN_ZOOM, zoomLevel / 1.2);
+        drawChart();
+    });
+    
+    // Reset zoom button
+    resetZoomBtn.addEventListener('click', () => {
+        zoomLevel = 1;
+        panOffsetX = 0;
+        drawChart();
+    });
+    
+    // Mouse wheel zoom
+    chartCanvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        // Determine zoom direction
+        const zoomIn = e.deltaY < 0;
+        
+        // Apply zoom
+        if (zoomIn) {
+            zoomLevel = Math.min(MAX_ZOOM, zoomLevel * 1.1);
+        } else {
+            zoomLevel = Math.max(MIN_ZOOM, zoomLevel / 1.1);
+        }
+        
+        drawChart();
+    });
+    
+    // Panning with mouse
+    chartCanvas.addEventListener('mousedown', (e) => {
+        isPanning = true;
+        lastMouseX = e.clientX;
+        chartCanvas.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mouseup', () => {
+        isPanning = false;
+        chartCanvas.style.cursor = 'grab';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        
+        const dx = e.clientX - lastMouseX;
+        lastMouseX = e.clientX;
+        
+        // Convert pixel movement to data points
+        const dataPointDelta = Math.round(dx / (chartCanvas.width / visibleDataPoints));
+        panOffsetX = Math.max(0, panOffsetX - dataPointDelta);
+        
+        // Limit panning to available data
+        const maxPan = Math.max(0, priceHistory.length - visibleDataPoints);
+        panOffsetX = Math.min(maxPan, panOffsetX);
+        
+        drawChart();
+    });
+    
+    // Function to generate proper candlestick data
+    function generateCandlestickData(basePrice, count = 100) {
+        const candlesticks = [];
+        let price = basePrice;
+        
+        for (let i = 0; i < count; i++) {
+            // Generate random price movement
+            const change = price * (Math.random() * 0.02 - 0.01) * volatilityMultiplier;
+            const open = price;
+            price = open + change;
+            const close = price;
+            
+            // High and low with some randomness
+            const high = Math.max(open, close) * (1 + Math.random() * 0.005);
+            const low = Math.min(open, close) * (1 - Math.random() * 0.005);
+            
+            candlesticks.push({
+                open,
+                high,
+                low,
+                close,
+                timestamp: Date.now() - (count - i) * 60000 // Simple timestamp approximation
+            });
+        }
+        
+        return candlesticks;
+    }
+    
+    // Override original fetchHistoricalData function to create proper candlestick data
+    // if API fails or for debugging purposes
+    const originalFetchHistoricalData = window.fetchHistoricalData;
+    window.fetchHistoricalData = async function() {
+        try {
+            await originalFetchHistoricalData();
+            
+            // If we don't have data or need to debug, generate synthetic data
+            if (!historicalDataLoaded || priceHistory.length < 20) {
+                console.log("Generating debug candlestick data");
+                priceHistory = generateCandlestickData(currentPrice);
+                historicalDataLoaded = true;
+            }
+            
+            // Ensure data is in candlestick format
+            priceHistory = priceHistory.map(price => {
+                if (typeof price === 'number') {
+                    return {
+                        open: price * 0.998,
+                        high: price * 1.002,
+                        low: price * 0.995,
+                        close: price,
+                        timestamp: Date.now()
+                    };
+                }
+                return price;
+            });
+            
+            drawChart();
+        } catch (error) {
+            console.error("Error in enhanced fetchHistoricalData:", error);
+            // Generate synthetic data on failure
+            priceHistory = generateCandlestickData(currentPrice);
+            historicalDataLoaded = true;
+            drawChart();
+        }
+    };
+    
+    // Override simulatePriceMovement to create proper candlestick data
+    const originalSimulatePriceMovement = window.simulatePriceMovement;
+    window.simulatePriceMovement = function() {
+        const previousPrice = currentPrice;
+        
+        // Generate a random price movement with volatility multiplier
+        const changePercent = (Math.random() * 0.02 - 0.01) * volatilityMultiplier;
+        currentPrice = currentPrice * (1 + changePercent);
+        
+        // Generate candlestick data
+        const open = previousPrice;
+        const close = currentPrice;
+        const high = Math.max(open, close) * (1 + Math.random() * 0.005);
+        const low = Math.min(open, close) * (1 - Math.random() * 0.005);
+        
+        // Add to price history
+        priceHistory.push({
+            open,
+            high,
+            low,
+            close,
+            timestamp: Date.now()
+        });
+        
+        if (priceHistory.length > 300) { // Keep more history for zooming
+            priceHistory.shift();
+        }
+        
+        // Calculate 24h high/low from local data
+        const high24h = Math.max(...priceHistory.map(p => p.high));
+        const low24h = Math.min(...priceHistory.map(p => p.low));
+        
+        // Simulate 24h change
+        const priceStart = priceHistory[0].open;
+        const priceChange = ((currentPrice - priceStart) / priceStart) * 100;
+        
+        // Update UI
+        currentPriceElement.textContent = `${currentPrice.toFixed(2)}`;
+        
+        // Determine if price is up or down from previous
+        if (currentPrice > previousPrice) {
+            currentPriceElement.className = 'price-value up';
+        } else if (currentPrice < previousPrice) {
+            currentPriceElement.className = 'price-value down';
+        }
+        
+        // Update 24h high/low and change in the UI
+        priceHighElement.textContent = `${high24h.toFixed(2)}`;
+        priceLowElement.textContent = `${low24h.toFixed(2)}`;
+        priceChangeElement.textContent = `${priceChange.toFixed(2)}%`;
+        
+        // Update the change color based on positive or negative change
+        if (priceChange > 0) {
+            priceChangeElement.className = 'price-value up';
+        } else if (priceChange < 0) {
+            priceChangeElement.className = 'price-value down';
+        }
+        
+        // Redraw the chart with the updated price history
+        drawChart();
+        
+        // Debug info update
+        debugInfo.textContent = `Price: $${currentPrice.toFixed(2)} | Zoom: ${zoomLevel.toFixed(1)}x | Points: ${visibleDataPoints}`;
+    };
+}
+
+// Add crosshair price tracking
+function addCrosshairTracking() {
+    const chartCanvas = document.getElementById('chart-canvas');
+    const debugInfo = document.getElementById('debug-info');
+    
+    // Create crosshair elements
+    const verticalLine = document.createElement('div');
+    verticalLine.className = 'chart-crosshair-v';
+    
+    const horizontalLine = document.createElement('div');
+    horizontalLine.className = 'chart-crosshair-h';
+    
+    const priceLabel = document.createElement('div');
+    priceLabel.className = 'chart-price-label';
+    
+    // Add crosshair elements to chart
+    const chartContainer = document.querySelector('.chart');
+    chartContainer.appendChild(verticalLine);
+    chartContainer.appendChild(horizontalLine);
+    chartContainer.appendChild(priceLabel);
+    
+    // Add styles for crosshair
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+        .chart {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-crosshair-v,
+        .chart-crosshair-h {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+            display: none;
+        }
+        
+        .chart-crosshair-v {
+            width: 1px;
+            height: 100%;
+            top: 0;
+        }
+        
+        .chart-crosshair-h {
+            height: 1px;
+            width: 100%;
+            left: 0;
+        }
+        
+        .chart-price-label {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            pointer-events: none;
+            display: none;
+        }
+    `;
+    document.head.appendChild(styleElement);
+    
+    // Mouse move event for crosshair
+    chartCanvas.addEventListener('mousemove', (e) => {
+        const rect = chartCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Update crosshair position
+        verticalLine.style.left = `${x}px`;
+        verticalLine.style.display = 'block';
+        
+        horizontalLine.style.top = `${y}px`;
+        horizontalLine.style.display = 'block';
+        
+        // Calculate price at cursor position
+        if (priceHistory && priceHistory.length > 0) {
+            const height = chartCanvas.height;
+            
+            // Get visible prices
+            const visibleDataPoints = Math.max(20, Math.floor(100 / zoomLevel));
+            const startIdx = Math.max(0, priceHistory.length - visibleDataPoints - panOffsetX);
+            const endIdx = Math.min(priceHistory.length, startIdx + visibleDataPoints);
+            const visiblePrices = priceHistory.slice(startIdx, endIdx);
+            
+            // Find min and max prices
+            let minPrice = Number.MAX_VALUE;
+            let maxPrice = Number.MIN_VALUE;
+            
+            visiblePrices.forEach(price => {
+                if (typeof price === 'number') {
+                    minPrice = Math.min(minPrice, price);
+                    maxPrice = Math.max(maxPrice, price);
+                } else if (price && typeof price === 'object') {
+                    if (price.low !== undefined) minPrice = Math.min(minPrice, price.low);
+                    if (price.high !== undefined) maxPrice = Math.max(maxPrice, price.high);
+                }
+            });
+            
+            // Add padding
+            const padding = (maxPrice - minPrice) * 0.05;
+            minPrice = minPrice - padding;
+            maxPrice = maxPrice + padding;
+            const priceRange = maxPrice - minPrice;
+            
+            // Calculate price at cursor Y position
+            const priceAtCursor = maxPrice - (y / height) * priceRange;
+            
+            // Calculate index at cursor X position
+            const dataPointWidth = chartCanvas.width / visiblePrices.length;
+            const dataIndex = Math.floor(x / dataPointWidth);
+            
+            if (dataIndex >= 0 && dataIndex < visiblePrices.length) {
+                const dataAtCursor = visiblePrices[dataIndex];
+                let displayPrice;
+                
+                if (typeof dataAtCursor === 'number') {
+                    displayPrice = dataAtCursor;
+                } else if (dataAtCursor && typeof dataAtCursor === 'object') {
+                    displayPrice = dataAtCursor.close !== undefined ? dataAtCursor.close : priceAtCursor;
+                } else {
+                    displayPrice = priceAtCursor;
+                }
+                
+                // Update debug info with more precise details
+                debugInfo.textContent = `Price: $${displayPrice.toFixed(2)} at pos: ${dataIndex + startIdx}`;
+                
+                // Update price label
+                priceLabel.textContent = `$${displayPrice.toFixed(2)}`;
+                priceLabel.style.left = `${x + 10}px`;
+                priceLabel.style.top = `${y - 20}px`;
+                priceLabel.style.display = 'block';
+            }
+        }
+    });
+    
+    // Mouse leave event to hide crosshair
+    chartCanvas.addEventListener('mouseleave', () => {
+        verticalLine.style.display = 'none';
+        horizontalLine.style.display = 'none';
+        priceLabel.style.display = 'none';
+    });
+}
+
+// Execute on load
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        addCrosshairTracking();
+    }, 1000); // Allow time for other scripts to initialize
+});
+    </script>
+</body>
+</html>
