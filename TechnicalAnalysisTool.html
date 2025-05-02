@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Analysis Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        select, button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background-color: white;
+            font-size: 0.9rem;
+        }
+        
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3367d6;
+        }
+        
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            height: 400px;
+        }
+        
+        .chart-info {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+        }
+        
+        .info-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .info-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .info-item {
+            background-color: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Real-Time Technical Analysis Tool</h1>
+        <p>Visualize crypto price data with technical indicators</p>
+    </header>
+    
+    <div class="controls">
+        <select id="cryptoSelect">
+            <option value="BTC">Bitcoin (BTC)</option>
+            <option value="ETH">Ethereum (ETH)</option>
+            <option value="SOL">Solana (SOL)</option>
+            <option value="BNB">Binance Coin (BNB)</option>
+            <option value="ADA">Cardano (ADA)</option>
+            <option value="XRP">Ripple (XRP)</option>
+            <option value="DOT">Polkadot (DOT)</option>
+            <option value="DOGE">Dogecoin (DOGE)</option>
+        </select>
+
+        <select id="indicatorSelect">
+            <option value="price">Price Only</option>
+            <option value="sma">SMA (Simple Moving Average)</option>
+            <option value="ema">EMA (Exponential Moving Average)</option>
+            <option value="rsi">RSI (Relative Strength Index)</option>
+        </select>
+        
+        <select id="periodSelect">
+            <option value="14">Period: 14</option>
+            <option value="20">Period: 20</option>
+            <option value="50">Period: 50</option>
+            <option value="100">Period: 100</option>
+            <option value="200">Period: 200</option>
+        </select>
+        
+        <button id="updateBtn">Update Data</button>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="priceChart"></canvas>
+    </div>
+    
+    <div class="chart-info">
+        <div class="info-title">Technical Indicators:</div>
+        <div class="info-content">
+            <div class="info-item">SMA: Simple Moving Average - the average price over a specific time period</div>
+            <div class="info-item">EMA: Exponential Moving Average - a weighted average that gives more importance to recent prices</div>
+            <div class="info-item">RSI: Relative Strength Index - measures the speed and magnitude of price movements (0-100)</div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const config = {
+            dataPoints: 100, // Number of data points to simulate
+            updateInterval: 5000, // Update interval in milliseconds
+        };
+
+        // Crypto data configuration
+        const cryptoConfig = {
+            'BTC': {
+                name: 'Bitcoin',
+                symbol: 'BTC-USD',
+                basePrice: 50000,
+                volatility: 500,  // Price can change up to ±volatility
+                color: 'rgb(247, 147, 26)'
+            },
+            'ETH': {
+                name: 'Ethereum',
+                symbol: 'ETH-USD',
+                basePrice: 3200,
+                volatility: 100,
+                color: 'rgb(114, 125, 245)'
+            },
+            'SOL': {
+                name: 'Solana',
+                symbol: 'SOL-USD',
+                basePrice: 120,
+                volatility: 10,
+                color: 'rgb(20, 241, 149)'
+            },
+            'BNB': {
+                name: 'Binance Coin',
+                symbol: 'BNB-USD',
+                basePrice: 380,
+                volatility: 30,
+                color: 'rgb(243, 186, 47)'
+            },
+            'ADA': {
+                name: 'Cardano',
+                symbol: 'ADA-USD',
+                basePrice: 0.55,
+                volatility: 0.05,
+                color: 'rgb(0, 51, 173)'
+            },
+            'XRP': {
+                name: 'Ripple',
+                symbol: 'XRP-USD',
+                basePrice: 0.58,
+                volatility: 0.04,
+                color: 'rgb(35, 41, 47)'
+            },
+            'DOT': {
+                name: 'Polkadot',
+                symbol: 'DOT-USD',
+                basePrice: 7.5,
+                volatility: 0.5,
+                color: 'rgb(230, 0, 122)'
+            },
+            'DOGE': {
+                name: 'Dogecoin',
+                symbol: 'DOGE-USD',
+                basePrice: 0.09,
+                volatility: 0.01,
+                color: 'rgb(195, 159, 85)'
+            }
+        };
+
+        // Store current selected crypto
+        let currentCrypto = 'BTC';
+
+        // Store chart instance
+        let priceChart;
+        
+        // Store price data history
+        const priceData = {
+            timestamps: [],
+            prices: [],
+            indicators: {
+                sma: [],
+                ema: [],
+                rsi: []
+            }
+        };
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            // Generate initial data
+            generateInitialData(currentCrypto);
+            
+            // Initialize chart
+            initializeChart();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Start simulation
+            startDataSimulation();
+        });
+        
+        // Generate initial price data
+        function generateInitialData(cryptoSymbol) {
+            // Clear previous data
+            priceData.timestamps = [];
+            priceData.prices = [];
+            
+            const now = new Date();
+            const crypto = cryptoConfig[cryptoSymbol];
+            
+            // Generate dummy data points
+            for (let i = config.dataPoints; i > 0; i--) {
+                // Generate timestamp (going backwards from now)
+                const timestamp = new Date(now - i * 60000); // One minute intervals
+                
+                // Generate simulated price
+                const basePrice = crypto.basePrice;
+                const randomFactor = Math.random() * crypto.volatility - (crypto.volatility / 2); // Random change
+                const simulatedTrend = Math.sin(i / 10) * (crypto.volatility * 2); // Add a sine wave pattern
+                const price = basePrice + randomFactor + simulatedTrend;
+                
+                // Save data
+                priceData.timestamps.push(timestamp);
+                priceData.prices.push(price);
+            }
+            
+            // Calculate initial indicators
+            calculateIndicators();
+        }
+        
+        // Initialize the chart
+        function initializeChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            const crypto = cryptoConfig[currentCrypto];
+            
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: formatTimestamps(priceData.timestamps),
+                    datasets: [
+                        {
+                            label: 'Price',
+                            data: priceData.prices,
+                            borderColor: crypto.color,
+                            backgroundColor: `${crypto.color}20`,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: 'USD'
+                                        }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: `${crypto.name} (${crypto.symbol}) Price Chart`
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxTicksLimit: 8,
+                                maxRotation: 0
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            const cryptoSelect = document.getElementById('cryptoSelect');
+            const indicatorSelect = document.getElementById('indicatorSelect');
+            const periodSelect = document.getElementById('periodSelect');
+            const updateBtn = document.getElementById('updateBtn');
+            
+            // Handle crypto select change
+            cryptoSelect.addEventListener('change', () => {
+                currentCrypto = cryptoSelect.value;
+                generateInitialData(currentCrypto);
+                updateChartDisplay();
+            });
+            
+            // Handle indicator select change
+            indicatorSelect.addEventListener('change', () => {
+                updateChartDisplay();
+            });
+            
+            // Handle period select change
+            periodSelect.addEventListener('change', () => {
+                calculateIndicators();
+                updateChartDisplay();
+            });
+            
+            // Handle update button click
+            updateBtn.addEventListener('click', () => {
+                updateData();
+            });
+        }
+        
+        // Start data simulation
+        function startDataSimulation() {
+            // Set interval for data updates
+            setInterval(() => {
+                updateData();
+            }, config.updateInterval);
+        }
+        
+        // Update data with new price point
+        function updateData() {
+            const crypto = cryptoConfig[currentCrypto];
+            
+            // Remove the oldest data point
+            priceData.timestamps.shift();
+            priceData.prices.shift();
+            
+            // Add new data point
+            const lastPrice = priceData.prices[priceData.prices.length - 1];
+            const volatilityPercent = (crypto.volatility / crypto.basePrice) * 2;
+            const changePercent = (Math.random() * volatilityPercent) - (volatilityPercent / 2); // Random % change based on volatility
+            const newPrice = lastPrice * (1 + changePercent);
+            
+            const newTimestamp = new Date(priceData.timestamps[priceData.timestamps.length - 1].getTime() + 60000);
+            
+            priceData.timestamps.push(newTimestamp);
+            priceData.prices.push(newPrice);
+            
+            // Recalculate indicators
+            calculateIndicators();
+            
+            // Update chart
+            updateChartDisplay();
+        }
+        
+        // Calculate technical indicators
+        function calculateIndicators() {
+            const period = parseInt(document.getElementById('periodSelect').value);
+            
+            // Clear previous indicator data
+            priceData.indicators.sma = [];
+            priceData.indicators.ema = [];
+            priceData.indicators.rsi = [];
+            
+            // Calculate SMA
+            for (let i = 0; i < priceData.prices.length; i++) {
+                if (i < period - 1) {
+                    priceData.indicators.sma.push(null);
+                } else {
+                    let sum = 0;
+                    for (let j = 0; j < period; j++) {
+                        sum += priceData.prices[i - j];
+                    }
+                    priceData.indicators.sma.push(sum / period);
+                }
+            }
+            
+            // Calculate EMA
+            let multiplier = 2 / (period + 1);
+            let emaInitial = null;
+            
+            for (let i = 0; i < priceData.prices.length; i++) {
+                if (i < period - 1) {
+                    priceData.indicators.ema.push(null);
+                } else if (i === period - 1) {
+                    // First EMA is SMA
+                    let sum = 0;
+                    for (let j = 0; j < period; j++) {
+                        sum += priceData.prices[i - j];
+                    }
+                    emaInitial = sum / period;
+                    priceData.indicators.ema.push(emaInitial);
+                } else {
+                    // EMA = (Close - Previous EMA) * multiplier + Previous EMA
+                    let previousEMA = priceData.indicators.ema[i - 1];
+                    let currentEMA = (priceData.prices[i] - previousEMA) * multiplier + previousEMA;
+                    priceData.indicators.ema.push(currentEMA);
+                }
+            }
+            
+            // Calculate RSI
+            let gains = [];
+            let losses = [];
+            
+            // Calculate price changes
+            for (let i = 1; i < priceData.prices.length; i++) {
+                const change = priceData.prices[i] - priceData.prices[i - 1];
+                gains.push(change > 0 ? change : 0);
+                losses.push(change < 0 ? Math.abs(change) : 0);
+            }
+            
+            // Calculate RSI
+            for (let i = 0; i < priceData.prices.length; i++) {
+                if (i < period) {
+                    priceData.indicators.rsi.push(null);
+                } else {
+                    // Calculate average gain and average loss for the period
+                    let avgGain = 0;
+                    let avgLoss = 0;
+                    
+                    for (let j = i - period; j < i; j++) {
+                        avgGain += gains[j - 1];
+                        avgLoss += losses[j - 1];
+                    }
+                    
+                    avgGain /= period;
+                    avgLoss /= period;
+                    
+                    // Calculate RS and RSI
+                    if (avgLoss === 0) {
+                        priceData.indicators.rsi.push(100);
+                    } else {
+                        const rs = avgGain / avgLoss;
+                        const rsi = 100 - (100 / (1 + rs));
+                        priceData.indicators.rsi.push(rsi);
+                    }
+                }
+            }
+        }
+        
+        // Update chart display based on selected indicator
+        function updateChartDisplay() {
+            const crypto = cryptoConfig[currentCrypto];
+            const indicatorSelect = document.getElementById('indicatorSelect');
+            const indicator = indicatorSelect.value;
+            const period = document.getElementById('periodSelect').value;
+            
+            // Update chart title
+            priceChart.options.plugins.title.text = `${crypto.name} (${crypto.symbol}) Price Chart`;
+            
+            // Update chart datasets
+            priceChart.data.labels = formatTimestamps(priceData.timestamps);
+            priceChart.data.datasets = [{
+                label: `${crypto.name} Price`,
+                data: priceData.prices,
+                borderColor: crypto.color,
+                backgroundColor: `${crypto.color}20`, // Add transparency
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: true
+            }];
+            
+            // Add indicator dataset if selected
+            if (indicator === 'sma') {
+                priceChart.data.datasets.push({
+                    label: `SMA (${period})`,
+                    data: priceData.indicators.sma,
+                    borderColor: 'rgb(234, 67, 53)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                });
+                priceChart.options.scales.y.display = true;
+            } else if (indicator === 'ema') {
+                priceChart.data.datasets.push({
+                    label: `EMA (${period})`,
+                    data: priceData.indicators.ema,
+                    borderColor: 'rgb(251, 188, 5)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                });
+                priceChart.options.scales.y.display = true;
+            } else if (indicator === 'rsi') {
+                // Create a separate dataset for RSI
+                priceChart.data.datasets = [{
+                    label: `RSI (${period})`,
+                    data: priceData.indicators.rsi,
+                    borderColor: 'rgb(52, 168, 83)',
+                    backgroundColor: 'rgba(52, 168, 83, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true
+                }];
+                
+                // Update y-axis for RSI
+                priceChart.options.scales.y = {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value;
+                        }
+                    }
+                };
+                
+                // Add overbought/oversold areas
+                priceChart.options.plugins.annotation = {
+                    annotations: {
+                        overbought: {
+                            type: 'line',
+                            yMin: 70,
+                            yMax: 70,
+                            borderColor: 'rgb(234, 67, 53)',
+                            borderWidth: 1
+                        },
+                        oversold: {
+                            type: 'line',
+                            yMin: 30,
+                            yMax: 30,
+                            borderColor: 'rgb(234, 67, 53)',
+                            borderWidth: 1
+                        }
+                    }
+                };
+            } else {
+                // Price only, default settings
+                priceChart.options.scales.y = {
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                };
+            }
+            
+            // Format y-axis ticks based on the crypto price range
+            if (indicator !== 'rsi') {
+                if (crypto.basePrice < 1) {
+                    priceChart.options.scales.y.ticks.callback = function(value) {
+                        return '$' + value.toFixed(4);
+                    };
+                } else if (crypto.basePrice < 10) {
+                    priceChart.options.scales.y.ticks.callback = function(value) {
+                        return '$' + value.toFixed(2);
+                    };
+                } else {
+                    priceChart.options.scales.y.ticks.callback = function(value) {
+                        return '$' + value.toLocaleString();
+                    };
+                }
+            }
+            
+            // Update chart
+            priceChart.update();
+        }
+        
+        // Format timestamps for display
+        function formatTimestamps(timestamps) {
+            return timestamps.map(timestamp => {
+                return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            });
+        }
+    </script>
+</body>
+</html>
