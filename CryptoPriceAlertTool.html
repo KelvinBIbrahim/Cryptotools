@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Price Alert Tool</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-stop {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-stop:hover {
+            background-color: #c0392b;
+        }
+        
+        .price-display {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--secondary-color);
+        }
+        
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .alerts-container {
+            margin-top: 20px;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            animation: fadeIn 0.5s;
+        }
+        
+        .alert-high {
+            background-color: #d5f5e3;
+            color: #27ae60;
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .alert-low {
+            background-color: #fadbd8;
+            color: #c0392b;
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .search-results {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            width: calc(100% - 40px);
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .search-result-item {
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .search-result-item:hover {
+            background-color: #f5f7fa;
+        }
+        
+        .coin-symbol {
+            font-weight: bold;
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+        
+        .selected-coin {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #eaf2f8;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .selected-coin img {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .coin-search-container {
+            position: relative;
+        }
+        
+        .loading {
+            text-align: center;
+            margin: 10px 0;
+            color: var(--primary-color);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .price-display {
+                font-size: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+        
+        .threshold-inputs {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .threshold-inputs .input-group {
+            flex: 1;
+        }
+        
+        @media (max-width: 576px) {
+            .threshold-inputs {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+        
+        .notifications {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .notification {
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
+            max-width: 300px;
+        }
+        
+        .notification-high {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .notification-low {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Crypto Price Alert Tool</h1>
+            <p>Monitor cryptocurrency prices and get alerts when thresholds are reached</p>
+        </header>
+        
+        <div class="card">
+            <div class="input-group coin-search-container">
+                <label for="coinSearch">Search Cryptocurrency:</label>
+                <input type="text" id="coinSearch" placeholder="Type to search (e.g. Bitcoin, Ethereum)" autocomplete="off">
+                <div class="search-results" id="searchResults"></div>
+                <div class="selected-coin" id="selectedCoin"></div>
+            </div>
+            
+            <div class="threshold-inputs">
+                <div class="input-group">
+                    <label for="highThreshold">High Alert Price ($):</label>
+                    <input type="number" id="highThreshold" placeholder="e.g. 60000" step="any">
+                </div>
+                
+                <div class="input-group">
+                    <label for="lowThreshold">Low Alert Price ($):</label>
+                    <input type="number" id="lowThreshold" placeholder="e.g. 50000" step="any">
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="timeFrame">Check Interval:</label>
+                <select id="timeFrame">
+                    <option value="10000">10 Seconds</option>
+                    <option value="30000" selected>30 Seconds</option>
+                    <option value="60000">1 Minute</option>
+                    <option value="300000">5 Minutes</option>
+                    <option value="600000">10 Minutes</option>
+                    <option value="1800000">30 Minutes</option>
+                    <option value="3600000">1 Hour</option>
+                </select>
+            </div>
+            
+            <div class="btn-container">
+                <button id="startMonitoring" class="btn">Start Monitoring</button>
+                <button id="stopMonitoring" class="btn btn-stop" style="display: none;">Stop Monitoring</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Current Price</h2>
+            <div class="price-display" id="currentPrice">---.--</div>
+            <div class="status" id="statusText">Not monitoring</div>
+        </div>
+        
+        <div class="card alerts-container">
+            <h2>Price Alerts</h2>
+            <div id="alertsList">
+                <p class="status">No alerts yet</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notifications" id="notificationsContainer"></div>
+    
+    <script>
+        // Global variables
+        let selectedCoin = null;
+        let monitoringInterval = null;
+        let coinsList = [];
+        let lastAlertHigh = 0;
+        let lastAlertLow = 0;
+        const alertCooldown = 60000; // 1 minute cooldown between similar alerts
+        let currentTimeFrame = 30000; // Default time frame (30 seconds)
+        
+        // DOM Elements
+        const coinSearchInput = document.getElementById('coinSearch');
+        const searchResultsContainer = document.getElementById('searchResults');
+        const selectedCoinContainer = document.getElementById('selectedCoin');
+        const highThresholdInput = document.getElementById('highThreshold');
+        const lowThresholdInput = document.getElementById('lowThreshold');
+        const startMonitoringBtn = document.getElementById('startMonitoring');
+        const stopMonitoringBtn = document.getElementById('stopMonitoring');
+        const currentPriceDisplay = document.getElementById('currentPrice');
+        const statusText = document.getElementById('statusText');
+        const alertsList = document.getElementById('alertsList');
+        const notificationsContainer = document.getElementById('notificationsContainer');
+        
+        // Fetch list of available cryptocurrencies
+        async function fetchCoinsList() {
+            try {
+                const response = await fetch('https://api.coingecko.com/api/v3/coins/list');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch coins list');
+                }
+                coinsList = await response.json();
+            } catch (error) {
+                console.error('Error fetching coins list:', error);
+                showStatus('Error: Could not fetch cryptocurrency list. Please try again later.');
+            }
+        }
+        
+        // Search coins based on user input
+        function searchCoins(query) {
+            if (!query || query.length < 2) {
+                searchResultsContainer.style.display = 'none';
+                return;
+            }
+            
+            const results = coinsList.filter(coin => 
+                coin.name.toLowerCase().includes(query.toLowerCase()) || 
+                coin.symbol.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 20); // Limit to 20 results
+            
+            displaySearchResults(results);
+        }
+        
+        // Display search results
+        function displaySearchResults(results) {
+            searchResultsContainer.innerHTML = '';
+            
+            if (results.length === 0) {
+                searchResultsContainer.innerHTML = '<div class="search-result-item">No results found</div>';
+                searchResultsContainer.style.display = 'block';
+                return;
+            }
+            
+            results.forEach(coin => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'search-result-item';
+                resultItem.innerHTML = `<span class="coin-symbol">${coin.symbol.toUpperCase()}</span> ${coin.name}`;
+                
+                resultItem.addEventListener('click', () => {
+                    selectCoin(coin);
+                    searchResultsContainer.style.display = 'none';
+                    coinSearchInput.value = '';
+                });
+                
+                searchResultsContainer.appendChild(resultItem);
+            });
+            
+            searchResultsContainer.style.display = 'block';
+        }
+        
+        // Select a cryptocurrency
+        function selectCoin(coin) {
+            selectedCoin = coin;
+            selectedCoinContainer.innerHTML = `
+                <span class="coin-symbol">${coin.symbol.toUpperCase()}</span>
+                ${coin.name}
+            `;
+            selectedCoinContainer.style.display = 'block';
+            fetchCurrentPrice(); // Fetch initial price
+        }
+        
+        // Fetch current price of selected cryptocurrency
+        async function fetchCurrentPrice() {
+            if (!selectedCoin) {
+                showStatus('Please select a cryptocurrency first');
+                return null;
+            }
+            
+            try {
+                showStatus('Fetching current price...');
+                const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${selectedCoin.id}&vs_currencies=usd`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch price data');
+                }
+                
+                const data = await response.json();
+                const price = data[selectedCoin.id].usd;
+                
+                currentPriceDisplay.textContent = `$${price.toLocaleString()}`;
+                return price;
+            } catch (error) {
+                console.error('Error fetching price:', error);
+                showStatus('Error: Could not fetch price data. Please try again later.');
+                return null;
+            }
+        }
+        
+        // Start monitoring prices
+        function startMonitoring() {
+            const highThreshold = parseFloat(highThresholdInput.value);
+            const lowThreshold = parseFloat(lowThresholdInput.value);
+            
+            if (!selectedCoin) {
+                alert('Please select a cryptocurrency first');
+                return;
+            }
+            
+            if (isNaN(highThreshold) && isNaN(lowThreshold)) {
+                alert('Please enter at least one threshold value');
+                return;
+            }
+            
+            if (!isNaN(highThreshold) && !isNaN(lowThreshold) && highThreshold <= lowThreshold) {
+                alert('High threshold must be greater than low threshold');
+                return;
+            }
+            
+            // Clear existing alerts
+            alertsList.innerHTML = '';
+            
+            // Update UI
+            startMonitoringBtn.style.display = 'none';
+            stopMonitoringBtn.style.display = 'inline-block';
+            showStatus('Monitoring started');
+            
+            // Initial price check
+            checkPrice();
+            
+            // Set interval for regular price checks (every 30 seconds)
+            monitoringInterval = setInterval(checkPrice, 30000);
+        }
+        
+        // Stop monitoring
+        function stopMonitoring() {
+            clearInterval(monitoringInterval);
+            monitoringInterval = null;
+            
+            // Update UI
+            startMonitoringBtn.style.display = 'inline-block';
+            stopMonitoringBtn.style.display = 'none';
+            showStatus('Monitoring stopped');
+        }
+        
+        // Check price against thresholds
+        async function checkPrice() {
+            const price = await fetchCurrentPrice();
+            if (price === null) return;
+            
+            const highThreshold = parseFloat(highThresholdInput.value);
+            const lowThreshold = parseFloat(lowThresholdInput.value);
+            const now = Date.now();
+            
+            // Check high threshold
+            if (!isNaN(highThreshold) && price >= highThreshold) {
+                if (now - lastAlertHigh > alertCooldown) {
+                    createAlert('high', price, highThreshold);
+                    showNotification('high', price, highThreshold);
+                    lastAlertHigh = now;
+                }
+            }
+            
+            // Check low threshold
+            if (!isNaN(lowThreshold) && price <= lowThreshold) {
+                if (now - lastAlertLow > alertCooldown) {
+                    createAlert('low', price, lowThreshold);
+                    showNotification('low', price, lowThreshold);
+                    lastAlertLow = now;
+                }
+            }
+            
+            const highCondition = !isNaN(highThreshold) ? ` High: $${highThreshold.toLocaleString()}` : '';
+            const lowCondition = !isNaN(lowThreshold) ? ` Low: $${lowThreshold.toLocaleString()}` : '';
+            
+            showStatus(`Monitoring ${selectedCoin.name}.${highCondition}${lowCondition}. Next update in 30s.`);
+        }
+        
+        // Create alert in the alerts list
+        function createAlert(type, price, threshold) {
+            const alertElement = document.createElement('div');
+            alertElement.className = `alert alert-${type}`;
+            
+            const date = new Date().toLocaleTimeString();
+            const alertText = type === 'high' 
+                ? `${date} - Price went ABOVE $${threshold.toLocaleString()} to $${price.toLocaleString()}`
+                : `${date} - Price fell BELOW $${threshold.toLocaleString()} to $${price.toLocaleString()}`;
+            
+            alertElement.textContent = alertText;
+            
+            // Remove "No alerts yet" text if present
+            if (alertsList.querySelector('.status')) {
+                alertsList.innerHTML = '';
+            }
+            
+            // Add new alert at the top
+            alertsList.insertBefore(alertElement, alertsList.firstChild);
+        }
+        
+        // Show notification
+        function showNotification(type, price, threshold) {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            
+            const notificationText = type === 'high' 
+                ? `${selectedCoin.name} price went ABOVE $${threshold.toLocaleString()}`
+                : `${selectedCoin.name} price fell BELOW $${threshold.toLocaleString()}`;
+            
+            notification.textContent = notificationText;
+            notificationsContainer.appendChild(notification);
+            
+            // Remove notification after animation completes
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Update status text
+        function showStatus(message) {
+            statusText.textContent = message;
+        }
+        
+        // Event Listeners
+        coinSearchInput.addEventListener('input', () => {
+            searchCoins(coinSearchInput.value);
+        });
+        
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.coin-search-container')) {
+                searchResultsContainer.style.display = 'none';
+            }
+        });
+        
+        startMonitoringBtn.addEventListener('click', startMonitoring);
+        stopMonitoringBtn.addEventListener('click', stopMonitoring);
+        
+        // Initialize the app
+        window.addEventListener('load', () => {
+            fetchCoinsList();
+            showStatus('Ready to monitor cryptocurrency prices');
+        });
+    </script>
+</body>
+</html>
