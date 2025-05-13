@@ -1,0 +1,400 @@
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+							<style>
+								body {
+									background-color: white; /* Ensure the iframe has a white background */
+								}
+
+								
+							</style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube SEO Description & Tags Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.3/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #e00000 0%, #ff3d3d 100%);
+    }
+    #contentOutput, #tagsOutput, #hashtagsOutput {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .tab-active {
+      border-bottom: 3px solid #e00000;
+      color: #e00000;
+      font-weight: 600;
+    }
+    .youtube-btn {
+      background-color: #e00000;
+    }
+    .youtube-btn:hover {
+      background-color: #cc0000;
+    }
+    .youtube-border {
+      border-color: #e00000;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+  <header class="gradient-bg py-4 text-white shadow-md">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+          </svg>
+          <h1 class="text-2xl font-bold">YouTube SEO Description & Tags Generator</h1>
+        </div>
+        <p class="text-white text-sm">Boost your YouTube visibility with optimized descriptions, tags & hashtags</p>
+      </div>
+    </div>
+  </header>
+  <main class="flex-grow container mx-auto py-8 px-4">
+    <div class="max-w-5xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+      <div class="p-6 border-b border-gray-200">
+        <h2 class="text-xl font-semibold mb-4">Create YouTube-Optimized Content</h2>
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="videoTypeSelect" class="block text-sm font-medium text-gray-700 mb-1">YouTube Category</label>
+              <select 
+                id="videoTypeSelect" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="tutorial">Tutorial / How-To</option>
+                <option value="vlog">Vlog / Lifestyle</option>
+                <option value="gaming">Gaming</option>
+                <option value="review">Product Review</option>
+                <option value="educational">Educational</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="tech">Tech</option>
+                <option value="music">Music</option>
+                <option value="beauty">Beauty & Fashion</option>
+                <option value="cooking">Cooking & Food</option>
+                <option value="fitness">Fitness & Health</option>
+                <option value="business">Business & Marketing</option>
+              </select>
+            </div>
+            <div>
+              <label for="audienceSelect" class="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
+              <select 
+                id="audienceSelect" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="general">General Audience</option>
+                <option value="beginners">Beginners</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced / Experts</option>
+                <option value="kids">Kids & Family</option>
+                <option value="teens">Teenagers</option>
+                <option value="adults">Adults</option>
+                <option value="seniors">Seniors</option>
+                <option value="professionals">Professionals</option>
+                <option value="students">Students</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="titleInput" class="block text-sm font-medium text-gray-700 mb-1">Video Title</label>
+            <input 
+              type="text" 
+              id="titleInput" 
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" 
+              placeholder="Enter your YouTube video title"
+            />
+          </div>
+          <div>
+            <label for="descriptionInput" class="block text-sm font-medium text-gray-700 mb-1">Video Content Details</label>
+            <textarea 
+              id="descriptionInput" 
+              rows="6" 
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" 
+              placeholder="Describe what your video is about, key points covered, target audience, etc."
+            ></textarea>
+            <p id="helpText" class="text-sm text-gray-500 mt-1"></p>
+          </div>
+          <div>
+            <label for="keywordsInput" class="block text-sm font-medium text-gray-700 mb-1">Target Keywords (helps algorithm ranking)</label>
+            <input 
+              type="text" 
+              id="keywordsInput" 
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" 
+              placeholder="Enter keywords separated by commas (e.g., iPhone review, tech, unboxing)"
+            />
+          </div>
+          <div>
+            <label for="linksInput" class="block text-sm font-medium text-gray-700 mb-1">Links to Include (Optional)</label>
+            <textarea 
+              id="linksInput" 
+              rows="2" 
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" 
+              placeholder="Website: https://example.com&#10;Social media: @handle"
+            ></textarea>
+          </div>
+          <div class="pt-2">
+            <button 
+              id="generateButton" 
+              class="w-full youtube-btn text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center"
+            >
+              <span>Generate YouTube SEO Content</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="loadingIndicator" class="hidden p-8 text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+        <p class="mt-2 text-gray-600">Generating YouTube-optimized content for maximum visibility...</p>
+      </div>
+      <div id="resultsContainer" class="hidden">
+        <div class="border-b border-gray-200">
+          <div class="flex">
+            <button id="descriptionTab" class="tab-active py-3 px-6 focus:outline-none">Description</button>
+            <button id="tagsTab" class="py-3 px-6 focus:outline-none">Tags</button>
+            <button id="hashtagsTab" class="py-3 px-6 focus:outline-none">Hashtags</button>
+          </div>
+        </div>
+        <div id="descriptionPanel" class="p-6 bg-gray-50">
+          <h3 class="text-lg font-semibold mb-4">Your YouTube Description:</h3>
+          <div id="contentOutput" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 prose max-w-none whitespace-pre-wrap"></div>
+          <div class="mt-4 flex space-x-3">
+            <button 
+              id="copyDescriptionButton" 
+              class="youtube-btn text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+              Copy Description
+            </button>
+            <button 
+              id="regenerateButton" 
+              class="bg-white hover:bg-gray-100 text-red-600 border youtube-border font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 4v6h6"></path>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              Generate Alternative
+            </button>
+          </div>
+        </div>
+        <div id="tagsPanel" class="hidden p-6 bg-gray-50">
+          <h3 class="text-lg font-semibold mb-4">Your YouTube Tags:</h3>
+          <div id="tagsOutput" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 prose max-w-none whitespace-pre-wrap"></div>
+          <div class="mt-4">
+            <button 
+              id="copyTagsButton" 
+              class="youtube-btn text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+              Copy Tags
+            </button>
+          </div>
+        </div>
+        <div id="hashtagsPanel" class="hidden p-6 bg-gray-50">
+          <h3 class="text-lg font-semibold mb-4">Your YouTube Hashtags:</h3>
+          <div id="hashtagsOutput" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 prose max-w-none"></div>
+          <div class="mt-4">
+            <button 
+              id="copyHashtagsButton" 
+              class="youtube-btn text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+              Copy Hashtags
+            </button>
+          </div>
+        </div>
+        <div class="p-5 bg-yellow-50 border-t border-yellow-200">
+          <div class="flex items-start">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mt-0.5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+            <p class="text-sm text-yellow-700">YouTube recommends using 15-20 high-quality tags and using hashtags sparingly (max 3-5) for best results.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="bg-gray-900 py-6 text-center text-gray-400 text-sm mt-12">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+        <div class="flex items-center mb-4 md:mb-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+          </svg>
+          <h2 class="text-lg font-semibold text-white">YouTube SEO Toolkit</h2>
+        </div>
+        <div class="flex space-x-4">
+          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+            <span class="sr-only">YouTube</span>
+            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      <p>&copy; 2025 YouTube SEO Toolkit. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const generateButton = document.getElementById('generateButton');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const resultsContainer = document.getElementById('resultsContainer');
+      const descriptionTab = document.getElementById('descriptionTab');
+      const tagsTab = document.getElementById('tagsTab');
+      const hashtagsTab = document.getElementById('hashtagsTab');
+      const descriptionPanel = document.getElementById('descriptionPanel');
+      const tagsPanel = document.getElementById('tagsPanel');
+      const hashtagsPanel = document.getElementById('hashtagsPanel');
+
+      generateButton.addEventListener('click', function () {
+        // Hide any existing results
+        resultsContainer.classList.add('hidden');
+        descriptionPanel.classList.remove('hidden');
+        tagsPanel.classList.add('hidden');
+        hashtagsPanel.classList.add('hidden');
+
+        // Activate description tab
+        descriptionTab.classList.add('tab-active');
+        tagsTab.classList.remove('tab-active');
+        hashtagsTab.classList.remove('tab-active');
+
+        // Show loading indicator
+        loadingIndicator.classList.remove('hidden');
+
+        // Simulate generation delay
+        setTimeout(() => {
+          loadingIndicator.classList.add('hidden');
+          resultsContainer.classList.remove('hidden');
+
+          // Generate long description and large number of tags/hashtags
+          const title = document.getElementById('titleInput').value || "My Awesome Video";
+          const category = document.getElementById('videoTypeSelect').selectedOptions[0].textContent;
+          const audience = document.getElementById('audienceSelect').selectedOptions[0].textContent;
+          const description = document.getElementById('descriptionInput').value || "This is a high-quality video about the latest trends and insights in " + category.toLowerCase() + ". Whether you're a beginner or experienced viewer, this video will provide valuable information tailored for " + audience.toLowerCase() + ".";
+          const keywords = document.getElementById('keywordsInput').value.split(',').map(k => k.trim()).filter(Boolean);
+          const links = document.getElementById('linksInput').value;
+
+          // Update description panel with longer content
+          let fullDescription = `
+            ${description}\n\n`;
+
+          // Add repetitive but meaningful sections for length
+          for (let i = 0; i < 5; i++) {
+            fullDescription += `Explore more about ${category.toLowerCase()} and how it impacts ${audience.toLowerCase()} audiences like you.\n`;
+            fullDescription += `Whether you're just getting started or looking to improve your skills, this video has something for everyone.\n`;
+            fullDescription += `Stay tuned until the end to learn insider tips and tricks that will help you succeed in ${category.toLowerCase()}.\n\n`;
+          }
+
+          fullDescription += `
+            If you enjoyed this ${category.toLowerCase()} video, please like, comment, and subscribe for more content!\n
+            Follow us on social media for behind-the-scenes updates and special offers.\n
+            For business inquiries and collaborations, please contact us at: info@example.com\n
+            ${links ? `${links.split('\n').join('\n')}` : ''}
+          `;
+
+          document.getElementById('contentOutput').innerText = fullDescription;
+
+          // Generate 450 SEO tags
+          const defaultTags = ["youtube", "video", "onlinevideo", "digitalmedia", "contentcreator", "youtuber", "streamer", "influencer"];
+          const generatedTags = [...new Set([...defaultTags, ...keywords.map(k => k.replace(/\s+/g, "")), category.replace(/\s+/g, ""), audience.replace(/\s+/g, "")])];
+
+          // Generate additional variations to reach 450
+          for (let i = 0; i < 450; i++) {
+            const keyword = keywords[i % keywords.length] || "generickeyword";
+            generatedTags.push(`${keyword}${i}`);
+            generatedTags.push(`yt${keyword}${i}`);
+            generatedTags.push(`${keyword}tips`);
+            generatedTags.push(`${keyword}guide`);
+          }
+
+          document.getElementById('tagsOutput').innerText = generatedTags.slice(0, 450).join(", ");
+
+          // Generate 20 hashtags
+          const defaultHashTags = ["YouTube", "Video", "Online", "ContentCreator", "DigitalMarketing"];
+          const generatedHashTags = [...new Set([...defaultHashTags, ...keywords.map(k => k.split(" ").slice(0, 2).join(""))])].map(h => "#" + h.replace(/\s+/g, ""));
+          
+          while (generatedHashTags.length < 20) {
+            const index = Math.floor(Math.random() * keywords.length);
+            const keyword = keywords[index] || "MoreSEO";
+            generatedHashTags.push("#" + keyword.split(" ").slice(0, 2).join(""));
+          }
+
+          document.getElementById('hashtagsOutput').innerText = generatedHashTags.slice(0, 20).join(" ");
+        }, 2000);
+      });
+
+      // Tab switching functionality
+      function setupTab(tabElement, panelElement) {
+        tabElement.addEventListener('click', function () {
+          // Remove active class from all tabs
+          [descriptionTab, tagsTab, hashtagsTab].forEach(t => t.classList.remove('tab-active'));
+          // Add active class to clicked tab
+          tabElement.classList.add('tab-active');
+
+          // Hide all panels
+          [descriptionPanel, tagsPanel, hashtagsPanel].forEach(p => p.classList.add('hidden'));
+          // Show selected panel
+          panelElement.classList.remove('hidden');
+        });
+      }
+
+      setupTab(descriptionTab, descriptionPanel);
+      setupTab(tagsTab, tagsPanel);
+      setupTab(hashtagsTab, hashtagsPanel);
+
+      // Copy buttons
+      document.getElementById('copyDescriptionButton').addEventListener('click', function () {
+        const content = document.getElementById('contentOutput').innerText;
+        navigator.clipboard.writeText(content).then(() => {
+          alert('Description copied to clipboard!');
+        });
+      });
+
+      document.getElementById('copyTagsButton').addEventListener('click', function () {
+        const content = document.getElementById('tagsOutput').innerText;
+        navigator.clipboard.writeText(content).then(() => {
+          alert('Tags copied to clipboard!');
+        });
+      });
+
+      document.getElementById('copyHashtagsButton').addEventListener('click', function () {
+        const content = document.getElementById('hashtagsOutput').innerText;
+        navigator.clipboard.writeText(content).then(() => {
+          alert('Hashtags copied to clipboard!');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
+
+
+
+							<script>
+                            	
+							</script>
+                        </body>
+                        </html>
+                    

@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Video Downloader</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f9f9f9;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    header h1 {
+      color: #ff0000;
+      margin-bottom: 10px;
+    }
+    
+    header p {
+      color: #666;
+    }
+    
+    .form-container {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .tips {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .tips details {
+      margin-top: 10px;
+    }
+    
+    .tips summary {
+      cursor: pointer;
+      color: #ff0000;
+      font-weight: 500;
+    }
+    
+    .tips ul {
+      margin-top: 10px;
+      margin-left: 20px;
+      line-height: 1.5;
+    }
+    
+    .loader-subtitle {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .input-group {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    
+    input[type="text"] {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid #ddd;
+      border-radius: 4px 0 0 4px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    input[type="text"]:focus {
+      border-color: #ff0000;
+      outline: none;
+    }
+    
+    button {
+      background-color: #ff0000;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      cursor: pointer;
+      border-radius: 0 4px 4px 0;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #cc0000;
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .preview-container {
+      display: none;
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .video-info {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    
+    .thumbnail {
+      width: 200px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 20px;
+    }
+    
+    .video-details h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    
+    .video-details p {
+      color: #666;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    
+    .download-options {
+      margin-top: 20px;
+    }
+    
+    .download-options h3 {
+      margin-bottom: 15px;
+      font-size: 16px;
+      color: #333;
+    }
+    
+    .download-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    
+    .download-link {
+      display: block;
+      background-color: #f0f0f0;
+      color: #333;
+      text-decoration: none;
+      padding: 12px 15px;
+      border-radius: 4px;
+      text-align: center;
+      transition: background-color 0.3s;
+      font-size: 14px;
+    }
+    
+    .download-link:hover {
+      background-color: #e0e0e0;
+    }
+    
+    .error-message {
+      display: none;
+      background-color: #ffebee;
+      color: #c62828;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .loader {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: #ff0000;
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto 15px;
+    }
+    
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    @media (max-width: 600px) {
+      .input-group {
+        flex-direction: column;
+      }
+      
+      input[type="text"] {
+        border-radius: 4px;
+        margin-bottom: 10px;
+      }
+      
+      button {
+        border-radius: 4px;
+        width: 100%;
+      }
+      
+      .video-info {
+        flex-direction: column;
+      }
+      
+      .thumbnail {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>YouTube Video Downloader</h1>
+      <p>Enter a YouTube video URL to download the video in various formats</p>
+    </header>
+    
+    <div class="form-container">
+      <div class="input-group">
+        <input type="text" id="video-url" placeholder="Paste YouTube URL here (e.g., https://www.youtube.com/watch?v=...)">
+        <button id="download-btn">Download</button>
+      </div>
+      <div class="error-message" id="error-message"></div>
+      <div class="tips">
+        <details>
+          <summary>Having trouble?</summary>
+          <ul>
+            <li>Make sure the URL is from YouTube (starts with youtube.com or youtu.be)</li>
+            <li>Some videos may have restrictions or be unavailable for download</li>
+            <li>If one download option doesn't work, try another format</li>
+            <li>Video converter sites may display ads or require extra steps</li>
+          </ul>
+        </details>
+      </div>
+    </div>
+    
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <p>Fetching video information...</p>
+      <p class="loader-subtitle">This may take a moment...</p>
+    </div>
+    
+    <div class="preview-container" id="preview-container">
+      <div class="video-info" id="video-info">
+        <img src="" alt="Video Thumbnail" class="thumbnail" id="thumbnail">
+        <div class="video-details" id="video-details">
+          <h2 id="video-title">Video Title</h2>
+          <p id="video-duration">Duration: 0:00</p>
+          <p id="video-author">By: Channel Name</p>
+        </div>
+      </div>
+      
+      <div class="download-options">
+        <h3>Available Download Options</h3>
+        <div class="download-links" id="download-links"></div>
+      </div>
+    </div>
+    
+    <footer>
+      <p>Note: This tool uses third-party services and is for educational purposes only.</p>
+      <p>Please respect copyright laws and YouTube's Terms of Service.</p>
+      <p>APIs may change or become unavailable over time. Last updated: May 2025</p>
+    </footer>
+  </div>
+  
+  <script>
+    // Configuration
+    const CORS_PROXY = 'https://corsproxy.io/?';
+    const API_RETRY_ATTEMPTS = 3;
+    
+    // DOM Elements
+    const videoUrlInput = document.getElementById('video-url');
+    const downloadBtn = document.getElementById('download-btn');
+    const errorMessage = document.getElementById('error-message');
+    const loader = document.getElementById('loader');
+    const previewContainer = document.getElementById('preview-container');
+    const thumbnail = document.getElementById('thumbnail');
+    const videoTitle = document.getElementById('video-title');
+    const videoDuration = document.getElementById('video-duration');
+    const videoAuthor = document.getElementById('video-author');
+    const downloadLinks = document.getElementById('download-links');
+    
+    // YouTube URL Validation
+    function isValidYouTubeUrl(url) {
+      const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+      return youtubeRegex.test(url);
+    }
+    
+    // Extract Video ID from YouTube URL
+    function extractVideoId(url) {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+    
+    // Format duration from seconds to MM:SS or HH:MM:SS
+    function formatDuration(seconds) {
+      if (isNaN(seconds)) return '0:00';
+      
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      
+      if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      } else {
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+      }
+    }
+    
+    // Show error message
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.style.display = 'block';
+      loader.style.display = 'none';
+      previewContainer.style.display = 'none';
+    }
+    
+    // API: Fetch video information and download links
+    async function fetchVideoInfo(videoId) {
+      try {
+        // Show loader while fetching
+        loader.style.display = 'block';
+        
+        // Step 1: Get video basic info from YouTube's oEmbed API (publicly accessible)
+        const oEmbedResponse = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+        
+        if (!oEmbedResponse.ok) {
+          throw new Error('Could not fetch video information');
+        }
+        
+        const oEmbedData = await oEmbedResponse.json();
+        
+        // Step 2: Try multiple APIs for download links
+        let videoData = null;
+        let errorMessages = [];
+        
+        // Try all API endpoints sequentially until one works
+        for (let i = 0; i < 3; i++) {
+          try {
+            switch (i) {
+              case 0:
+                // Try rapidsave.com API first
+                videoData = await fetchFromRapidSave(videoId, oEmbedData);
+                break;
+              case 1:
+                // Try y2mate API second
+                videoData = await fetchFromY2Mate(videoId, oEmbedData);
+                break;
+              case 2:
+                // Try third API as final attempt
+                videoData = await fetchFromYoutubeConverter(videoId, oEmbedData);
+                break;
+            }
+            
+            // If we got valid data with formats, break the loop
+            if (videoData && videoData.formats && videoData.formats.length > 0) {
+              break;
+            }
+          } catch (apiError) {
+            errorMessages.push(`API ${i+1} failed: ${apiError.message}`);
+            console.error(`API ${i+1} error:`, apiError);
+            // Continue to next API
+          }
+        }
+        
+        // If all APIs failed, create a minimal response with at least the video info
+        if (!videoData || !videoData.formats || videoData.formats.length === 0) {
+          console.warn('All APIs failed, creating minimal response');
+          videoData = {
+            title: oEmbedData.title,
+            author: oEmbedData.author_name,
+            thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+            duration: 0, // Unknown duration
+            formats: [
+              { 
+                quality: 'Watch on YouTube', 
+                format: 'link', 
+                url: `https://www.youtube.com/watch?v=${videoId}`, 
+                size: 'N/A' 
+              }
+            ],
+            errors: errorMessages
+          };
+        }
+        
+        return videoData;
+      } catch (error) {
+        console.error('Error in fetchVideoInfo:', error);
+        throw new Error(`Failed to get video information: ${error.message}`);
+      }
+    }
+    
+    // API 1: RapidSave API
+    async function fetchFromRapidSave(videoId, oEmbedData) {
+      const corsProxy = 'https://corsproxy.io/?';
+      const apiUrl = `${corsProxy}https://rapidsave.com/api/info?url=https://www.youtube.com/watch?v=${videoId}`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0'
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('RapidSave API request failed');
+      }
+      
+      const data = await response.json();
+      
+      if (!data || !data.links || data.links.length === 0) {
+        throw new Error('No download links found');
+      }
+      
+      // Format the API response
+      const formats = [];
+      
+      // Process video formats
+      if (data.links) {
+        data.links.forEach(link => {
+          if (link.url) {
+            formats.push({
+              quality: link.quality || link.subname || link.type || 'Unknown',
+              format: link.type || (link.url.includes('mp3') ? 'mp3' : 'mp4'),
+              url: link.url,
+              size: link.size || 'Unknown'
+            });
+          }
+        });
+      }
+      
+      // Create video metadata object
+      return {
+        title: oEmbedData.title,
+        author: oEmbedData.author_name,
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+        duration: data.duration || 0,
+        formats: formats
+      };
+    }
+    
+    // API 2: Y2Mate API
+    async function fetchFromY2Mate(videoId, oEmbedData) {
+      const corsProxy = 'https://corsproxy.io/?';
+      const apiUrl = `${corsProxy}https://www.y2mate.com/mates/analyzeV2/ajax`;
+      
+      const formData = new FormData();
+      formData.append('k_query', `https://www.youtube.com/watch?v=${videoId}`);
+      formData.append('k_page', 'home');
+      formData.append('hl', 'en');
+      formData.append('q_auto', '0');
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Y2Mate API request failed');
+      }
+      
+      const data = await response.json();
+      
+      if (!data || !data.links || Object.keys(data.links).length === 0) {
+        throw new Error('No download links found from Y2Mate');
+      }
+      
+      // Format the API response
+      const formats = [];
+      
+      // Process video formats (mp4)
+      if (data.links && data.links.mp4) {
+        Object.entries(data.links.mp4).forEach(([quality, info]) => {
+          if (info.k) {
+            // Y2Mate requires a second request to get the actual download link
+            // We'll create a simulated URL that points to their website
+            formats.push({
+              quality: quality,
+              format: 'mp4',
+              url: `https://www.y2mate.com/download/${videoId}/${info.k}/mp4/${quality}`,
+              size: info.size || 'Unknown'
+            });
+          }
+        });
+      }
+      
+      // Process audio formats (mp3)
+      if (data.links && data.links.mp3) {
+        Object.entries(data.links.mp3).forEach(([quality, info]) => {
+          if (info.k) {
+            formats.push({
+              quality: `Audio ${quality}`,
+              format: 'mp3',
+              url: `https://www.y2mate.com/download/${videoId}/${info.k}/mp3/${quality}`,
+              size: info.size || 'Unknown'
+            });
+          }
+        });
+      }
+      
+      // Create video metadata object
+      return {
+        title: oEmbedData.title,
+        author: oEmbedData.author_name,
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+        duration: data.vid_duration_sec || 0,
+        formats: formats
+      };
+    }
+    
+    // API 3: YouTube Converter API
+    async function fetchFromYoutubeConverter(videoId, oEmbedData) {
+      // This is a simple API that redirects to a converter website
+      const formats = [
+        {
+          quality: '720p',
+          format: 'mp4',
+          url: `https://youtubepp.com/watch?v=${videoId}`,
+          size: 'Variable'
+        },
+        {
+          quality: '480p',
+          format: 'mp4',
+          url: `https://youtubepi.com/watch?v=${videoId}`,
+          size: 'Variable'
+        },
+        {
+          quality: 'Audio',
+          format: 'mp3',
+          url: `https://ytmp3.cc/youtube-to-mp3/?v=${videoId}`,
+          size: 'Variable'
+        }
+      ];
+      
+      // Create video metadata object
+      return {
+        title: oEmbedData.title,
+        author: oEmbedData.author_name,
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+        duration: 0, // Unknown duration
+        formats: formats
+      };
+    }
+      } catch (error) {
+        console.error('Error fetching video information:', error);
+        throw new Error('Failed to get video information. Please try again later.');
+      }
+    }
+    
+    // Display video information and download options
+    function displayVideoInfo(videoData) {
+      // Update video details
+      thumbnail.src = videoData.thumbnail;
+      thumbnail.alt = videoData.title;
+      videoTitle.textContent = videoData.title;
+      videoDuration.textContent = `Duration: ${formatDuration(videoData.duration)}`;
+      videoAuthor.textContent = `By: ${videoData.author}`;
+      
+      // Clear previous download links
+      downloadLinks.innerHTML = '';
+      
+      // Add download links
+      if (videoData.formats && videoData.formats.length > 0) {
+        // Group formats by type (mp4, mp3)
+        const groupedFormats = {};
+        
+        videoData.formats.forEach(format => {
+          const formatType = format.format.toLowerCase();
+          if (!groupedFormats[formatType]) {
+            groupedFormats[formatType] = [];
+          }
+          groupedFormats[formatType].push(format);
+        });
+        
+        // Create section for each format type
+        Object.keys(groupedFormats).forEach(formatType => {
+          // Add format type header
+          const formatHeader = document.createElement('h4');
+          formatHeader.textContent = formatType.toUpperCase() + ' formats:';
+          formatHeader.style.margin = '10px 0 5px 0';
+          formatHeader.style.color = '#555';
+          downloadLinks.appendChild(formatHeader);
+          
+          // Add formats of this type
+          groupedFormats[formatType].forEach(format => {
+            const link = document.createElement('a');
+            link.href = format.url || '#';
+            link.className = 'download-link';
+            
+            // Create a better display for each format
+            const qualityText = format.quality || 'Standard';
+            const sizeText = format.size && format.size !== 'Unknown' ? ` (${format.size})` : '';
+            
+            link.textContent = `${qualityText}${sizeText}`;
+            
+            // Add icon based on format type
+            if (formatType === 'mp4') {
+              link.innerHTML = '🎬 ' + link.innerHTML;
+            } else if (formatType === 'mp3') {
+              link.innerHTML = '🎵 ' + link.innerHTML;
+            } else if (formatType === 'link') {
+              link.innerHTML = '🔗 ' + link.innerHTML;
+            }
+            
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              showRealWorldLimitation(format);
+            });
+            downloadLinks.appendChild(link);
+          });
+        });
+        
+        // If API reported errors, show warning
+        if (videoData.errors && videoData.errors.length > 0) {
+          const apiWarning = document.createElement('p');
+          apiWarning.textContent = 'Note: Some download options may be limited due to API restrictions.';
+          apiWarning.style.color = '#ff6b6b';
+          apiWarning.style.fontSize = '12px';
+          apiWarning.style.marginTop = '15px';
+          downloadLinks.appendChild(apiWarning);
+        }
+      } else {
+        // No formats available
+        const noFormats = document.createElement('p');
+        noFormats.textContent = 'No download formats available for this video. Try another video or check back later.';
+        noFormats.style.color = '#666';
+        downloadLinks.appendChild(noFormats);
+        
+        // Add direct YouTube link as fallback
+        const youtubeLink = document.createElement('a');
+        youtubeLink.href = `https://www.youtube.com/watch?v=${extractVideoId(videoUrlInput.value)}`;
+        youtubeLink.className = 'download-link';
+        youtubeLink.innerHTML = '🔗 Watch on YouTube';
+        youtubeLink.target = '_blank';
+        downloadLinks.appendChild(youtubeLink);
+      }
+      
+      // Show preview container
+      loader.style.display = 'none';
+      previewContainer.style.display = 'block';
+    }
+    
+    // Handle downloading or limitations
+    function showRealWorldLimitation(format) {
+      if (format.url && format.url.startsWith('http')) {
+        // For formats that need to redirect to converter websites
+        const isConverterSite = format.url.includes('youtubepp.com') || 
+                              format.url.includes('youtubepi.com') || 
+                              format.url.includes('ytmp3.cc') ||
+                              format.url.includes('y2mate.com');
+        
+        if (isConverterSite) {
+          // Let user know they're being redirected to a converter site
+          if (confirm(`This will redirect you to ${format.quality} ${format.format.toUpperCase()} converter website.\n\nSome converter sites may display ads or require additional steps.\n\nContinue?`)) {
+            window.open(format.url, '_blank');
+          }
+        } else {
+          // Direct download link - open in new tab
+          window.open(format.url, '_blank');
+        }
+      } else {
+        // If the API didn't provide a working link, show explanation
+        alert(`Unable to download the ${format.quality} ${format.format.toUpperCase()} version of this video.\n\nPossible reasons:\n1. The API service may be down\n2. This video may have restrictions\n3. Your browser may be blocking cross-origin requests\n\nTry again later or try another video.`);
+      }
+    }
+    
+    // Main download button click handler
+    downloadBtn.addEventListener('click', async () => {
+      const url = videoUrlInput.value.trim();
+      
+      // Reset UI
+      errorMessage.style.display = 'none';
+      
+      // Validate URL
+      if (!url) {
+        showError('Please enter a YouTube URL');
+        return;
+      }
+      
+      if (!isValidYouTubeUrl(url)) {
+        showError('Please enter a valid YouTube URL');
+        return;
+      }
+      
+      // Extract video ID
+      const videoId = extractVideoId(url);
+      if (!videoId) {
+        showError('Could not extract video ID from URL');
+        return;
+      }
+      
+      // Show loader
+      loader.style.display = 'block';
+      previewContainer.style.display = 'none';
+      
+      try {
+        // Fetch video information
+        const videoData = await fetchVideoInfo(videoId);
+        displayVideoInfo(videoData);
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+    
+    // Allow Enter key to trigger download
+    videoUrlInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        downloadBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>

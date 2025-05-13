@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Video Title & Description Analyzer</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.3/dist/tailwind.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .youtube-gradient {
+      background: linear-gradient(135deg, #ff0000 0%, #860000 100%);
+    }
+    .results-container {
+      max-height: 700px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    @media (max-width: 768px) {
+      .results-container {
+        max-height: 500px;
+      }
+    }
+    .keyword-item {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      border-left: 3px solid #ff0000;
+      transition: all 0.3s ease;
+    }
+    .keyword-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .keyword-count {
+      background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 2px 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .theme-toggle input:checked ~ .dot {
+      transform: translateX(100%);
+    }
+    .theme-toggle input:checked ~ .bg {
+      background-color: #ff0000;
+    }
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+      }
+    }
+    .loading {
+      display: inline-block;
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+    .loading div {
+      position: absolute;
+      top: 33px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #ff0000;
+      animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    .loading div:nth-child(1) {
+      left: 8px;
+      animation: loading1 0.6s infinite;
+    }
+    .loading div:nth-child(2) {
+      left: 8px;
+      animation: loading2 0.6s infinite;
+    }
+    .loading div:nth-child(3) {
+      left: 32px;
+      animation: loading2 0.6s infinite;
+    }
+    .loading div:nth-child(4) {
+      left: 56px;
+      animation: loading3 0.6s infinite;
+    }
+    @keyframes loading1 {
+      0% {
+        transform: scale(0);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    @keyframes loading3 {
+      0% {
+        transform: scale(1);
+      }
+      100% {
+        transform: scale(0);
+      }
+    }
+    @keyframes loading2 {
+      0% {
+        transform: translate(0, 0);
+      }
+      100% {
+        transform: translate(24px, 0);
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+  <!-- Header -->
+  <header class="youtube-gradient p-6 text-white">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+        </svg>
+        <h1 class="text-2xl font-bold">YouTube Video Title & Description Analyzer</h1>
+      </div>
+      
+      <!-- Theme toggle -->
+      <div class="theme-toggle relative inline-block w-12 mr-2 align-middle select-none">
+        <input type="checkbox" name="toggle" id="themeToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" />
+        <label for="themeToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+        <span class="dot absolute left-0 top-0 bg-white w-6 h-6 rounded-full transition-transform duration-300 ease-in-out"></span>
+        <span class="bg absolute inset-0 rounded-full transition-colors duration-300 ease-in-out"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="flex-grow container mx-auto px-4 py-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+      <!-- Form section -->
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <form id="analyzeForm">
+          <div class="mb-5">
+            <label for="videoTitle" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Video Title</label>
+            <input 
+              type="text" 
+              id="videoTitle" 
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Enter your YouTube video title here..."
+            >
+          </div>
+          
+          <div class="mb-5">
+            <label for="videoDescription" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Video Description</label>
+            <textarea 
+              id="videoDescription" 
+              rows="6" 
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 resize-y"
+              placeholder="Enter your YouTube video description here..."
+            ></textarea>
+          </div>
+          
+          <div class="flex flex-wrap gap-4">
+            <button 
+              type="submit" 
+              id="analyzeButton"
+              class="bg-red-600 hover:bg-red-700 text-white rounded-lg px-6 py-3 font-medium flex items-center transition duration-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+              </svg>
+              Analyze SEO
+            </button>
+            
+            <button 
+              type="button" 
+              id="clearButton"
+              class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg px-6 py-3 font-medium flex items-center transition duration-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Loading indicator (initially hidden) -->
+      <div id="loadingIndicator" class="hidden flex-col items-center justify-center p-8">
+        <div class="loading"><div></div><div></div><div></div><div></div></div>
+        <p class="text-gray-500 dark:text-gray-400 mt-4">Analyzing your content...</p>
+      </div>
+      
+      <!-- Results section (initially hidden) -->
+      <div id="resultsSection" class="hidden">
+        <div class="bg-gray-50 dark:bg-gray-850 p-6">
+          <h2 class="text-xl font-bold mb-2 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M6.672 1.911a1 1 0 10-1.932.518l.259.966a1 1 0 001.932-.518l-.26-.966zM2.429 4.74a1 1 0 10-.517 1.932l.966.259a1 1 0 00.517-1.932l-.966-.26zm8.814-.569a1 1 0 00-1.415-1.414l-.707.707a1 1 0 101.415 1.415l.707-.708zm-7.071 7.072l.707-.707A1 1 0 003.465 9.12l-.708.707a1 1 0 001.415 1.415zm3.2-5.171a1 1 0 00-1.3 1.3l4 10a1 1 0 001.823.075l1.38-2.759 3.018 3.02a1 1 0 001.414-1.415l-3.019-3.02 2.76-1.379a1 1 0 00-.076-1.822l-10-4z" clip-rule="evenodd" />
+            </svg>
+            Analysis Summary
+          </h2>
+          <div id="summary" class="text-gray-700 dark:text-gray-300 mb-4"></div>
+        </div>
+        
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold">Top Keywords</h2>
+            <button 
+              id="copyKeywordsBtn" 
+              class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg px-4 py-2 text-sm font-medium flex items-center transition duration-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+              </svg>
+              Copy Keywords
+            </button>
+          </div>
+          
+          <div id="copyNotification" class="hidden bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-4 py-2 rounded-lg text-center mb-4">
+            Keywords copied to clipboard!
+          </div>
+          
+          <!-- Keyword metrics overview -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <div class="text-sm text-gray-500 dark:text-gray-400">Total Analyzed Words</div>
+              <div id="totalWords" class="text-2xl font-bold">0</div>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <div class="text-sm text-gray-500 dark:text-gray-400">Unique Keywords</div>
+              <div id="uniqueKeywords" class="text-2xl font-bold">0</div>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-750 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <div class="text-sm text-gray-500 dark:text-gray-400">Keyword Richness</div>
+              <div id="keywordRichness" class="text-2xl font-bold">0%</div>
+            </div>
+          </div>
+          
+          <!-- Keywords grid -->
+          <div id="keywordsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 results-container custom-scrollbar pb-4"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-4 text-center text-gray-500 text-sm">
+    <p>© 2025 YouTube Video Title & Description Analyzer | Optimize your video SEO</p>
+  </footer>
+
+  <script>
+    // DOM Elements
+    const analyzeForm = document.getElementById('analyzeForm');
+    const videoTitle = document.getElementById('videoTitle');
+    const videoDescription = document.getElementById('videoDescription');
+    const analyzeButton = document.getElementById('analyzeButton');
+    const clearButton = document.getElementById('clearButton');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsSection = document.getElementById('resultsSection');
+    const summary = document.getElementById('summary');
+    const totalWords = document.getElementById('totalWords');
+    const uniqueKeywords = document.getElementById('uniqueKeywords');
+    const keywordRichness = document.getElementById('keywordRichness');
+    const keywordsGrid = document.getElementById('keywordsGrid');
+    const copyKeywordsBtn = document.getElementById('copyKeywordsBtn');
+    const copyNotification = document.getElementById('copyNotification');
+
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      // Check if dark mode is preferred or previously set
+      if (localStorage.getItem('darkMode') === 'enabled' || 
+          (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.body.classList.add('dark');
+        themeToggle.checked = true;
+        localStorage.setItem('darkMode', 'enabled');
+      }
+      
+      themeToggle.addEventListener('change', () => {
+        if (themeToggle.checked) {
+          document.body.classList.add('dark');
+          localStorage.setItem('darkMode', 'enabled');
+        } else {
+          document.body.classList.remove('dark');
+          localStorage.setItem('darkMode', 'disabled');
+        }
+      });
+    }
+
+    // Common stop words to filter out during analysis
+    const stopWords = [
+      "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as",
+      "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can't", "cannot",
+      "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during", "each",
+      "few", "for", "from", "further", "had", "hadn't", "has", "hasn't", "have", "haven't", "having", "he", "he'd",
+      "he'll", "he's", "her", "here", "here's", "hers", "herself", "him", "himself", "his", "how", "how's", "i",
+      "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's", "its", "itself", "let's", "me",
+      "more", "most", "mustn't", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other",
+      "ought", "our", "ours", "ourselves", "out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's",
+      "should", "shouldn't", "so", "some", "such", "than", "that", "that's", "the", "their", "theirs", "them",
+      "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this",
+      "those", "through", "to", "too", "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're",
+      "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's", "which", "while", "who",
+      "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're",
+      "you've", "your", "yours", "yourself", "yourselves", "https", "http", "www", "com", "will", "just"
+    ];
+
+    // YouTube-specific stop words
+    const youtubeStopWords = [
+      "video", "like", "subscribe", "channel", "click", "watch", "please", "thanks", "thank", "welcome",
+      "youtube", "youtuber", "comment", "comments", "follow", "followers"
+    ];
+
+    // Combine all stop words
+    const allStopWords = [...new Set([...stopWords, ...youtubeStopWords])];
+
+    // Event Listeners
+    if (analyzeForm) {
+      analyzeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        analyzeContent();
+      });
+    }
+
+    if (clearButton) {
+      clearButton.addEventListener('click', () => {
+        videoTitle.value = '';
+        videoDescription.value = '';
+        resultsSection.classList.add('hidden');
+        videoTitle.focus();
+      });
+    }
+
+    if (copyKeywordsBtn) {
+      copyKeywordsBtn.addEventListener('click', copyKeywords);
+    }
+
+    // Function to analyze the content
+    function analyzeContent() {
+      const title = videoTitle.value.trim();
+      const description = videoDescription.value.trim();
+      
+      if (!title && !description) {
+        alert('Please enter at least a video title or description to analyze.');
+        return;
+      }
+      
+      // Show loading indicator
+      loadingIndicator.classList.remove('hidden');
+      resultsSection.classList.add('hidden');
+      
+      // Simulate processing delay (for better UX)
+      setTimeout(() => {
+        const analysisResults = performAnalysis(title, description);
+        displayResults(analysisResults);
+        
+        // Hide loading, show results
+        loadingIndicator.classList.add('hidden');
+        resultsSection.classList.remove('hidden');
+        
+        // Scroll to results
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+      }, 1200);
+    }
+
+    // Function to perform keyword analysis
+    function performAnalysis(title, description) {
+      // Combine the title (weighted more) and description
+      const titleWeight = 3; // Title words count 3x more than description words
+      const combinedText = Array(titleWeight).fill(title).join(' ') + ' ' + description;
+      
+      // Clean and split text into words
+      const allWords = combinedText
+        .toLowerCase()
+        .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+        .split(/\s+/) // Split by whitespace
+        .filter(word => word.length > 1); // Filter out single characters
+      
+      // Count all valid words for total (including stop words)
+      const totalWordCount = allWords.length;
+      
+      // Filter out stop words for keyword analysis
+      const filteredWords = allWords.filter(word => !allStopWords.includes(word));
+      
+      // Count word frequencies
+      const wordCounts = {};
+      filteredWords.forEach(word => {
+        wordCounts[word] = (wordCounts[word] || 0) + 1;
+      });
+      
+      // Convert to array of objects for sorting
+      const keywords = Object.entries(wordCounts).map(([word, count]) => ({
+        word,
+        count,
+        density: (count / totalWordCount * 100).toFixed(1)
+      }));
+      
+      // Sort by count (descending)
+      keywords.sort((a, b) => b.count - a.count);
+      
+      return {
+        keywords: keywords.slice(0, 20), // Top 20 keywords
+        totalWords: totalWordCount,
+        uniqueKeywords: keywords.length,
+        keywordRichness: ((keywords.length / totalWordCount) * 100).toFixed(1)
+      };
+    }
+
+    // Function to display results
+    function displayResults(results) {
+      // Update metrics
+      totalWords.textContent = results.totalWords;
+      uniqueKeywords.textContent = results.uniqueKeywords;
+      keywordRichness.textContent = `${results.keywordRichness}%`;
+      
+      // Generate summary
+      const title = videoTitle.value.trim();
+      const descriptionLength = videoDescription.value.trim().length;
+      let summaryText = `<p>Analyzed <strong>${results.totalWords}</strong> total words and found <strong>${results.uniqueKeywords}</strong> unique keywords. `;
+      
+      if (title.length < 30) {
+        summaryText += `<span class="text-yellow-600 dark:text-yellow-400">Your title is only ${title.length} characters long. YouTube recommends titles between 50-60 characters for optimal appearance in search results.</span> `;
+      } else if (title.length > 70) {
+        summaryText += `<span class="text-yellow-600 dark:text-yellow-400">Your title is ${title.length} characters long, which exceeds YouTube's display limit in some places. Consider shortening it to 60 characters or less.</span> `;
+      } else {
+        summaryText += `<span class="text-green-600 dark:text-green-400">Your title length (${title.length} characters) is good for YouTube search results.</span> `;
+      }
+      
+      if (descriptionLength < 200) {
+        summaryText += `<span class="text-yellow-600 dark:text-yellow-400">Your description is quite short. Adding more relevant content with keywords can improve search visibility.</span>`;
+      } else {
+        summaryText += `<span class="text-green-600 dark:text-green-400">Your description length is good for SEO. YouTube can index up to 5000 characters in descriptions.</span>`;
+      }
+      
+      summary.innerHTML = summaryText;
+      
+      // Display keywords
+      keywordsGrid.innerHTML = '';
+      results.keywords.forEach((keyword, index) => {
+        const keywordElem = document.createElement('div');
+        keywordElem.className = 'keyword-item flex justify-between items-center p-4';
+        
+        // Add a special class to top keywords
+        if (index < 3) {
+          keywordElem.classList.add('border-l-4', 'border-red-500');
+        }
+        
+        keywordElem.innerHTML = `
+          <div class="flex-grow">
+            <span class="font-medium">${keyword.word}</span>
+            <div class="text-sm text-gray-500 dark:text-gray-400">${keyword.density}% density</div>
+          </div>
+          <span class="keyword-count">${keyword.count}</span>
+        `;
+        
+        keywordsGrid.appendChild(keywordElem);
+      });
+    }
+
+    // Function to copy keywords to clipboard
+    function copyKeywords() {
+      const keywordsData = [];
+      const keywordElements = document.querySelectorAll('.keyword-item');
+      
+      keywordElements.forEach(element => {
+        const keyword = element.querySelector('.font-medium').textContent;
+        const count = element.querySelector('.keyword-count').textContent;
+        const density = element.querySelector('.text-sm').textContent;
+        
+        keywordsData.push(`${keyword} (${count}, ${density})`);
+      });
+      
+      // Copy to clipboard
+      navigator.clipboard.writeText(keywordsData.join('\n'))
+        .then(() => {
+          // Show notification
+          copyNotification.classList.remove('hidden');
+          setTimeout(() => {
+            copyNotification.classList.add('hidden');
+          }, 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy text: ', err);
+          alert('Failed to copy to clipboard. Please try again.');
+        });
+    }
+
+    // Initialize focus on title field
+    if (videoTitle) {
+      videoTitle.focus();
+    }
+  </script>
+</body>
+</html>
