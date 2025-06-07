@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BotHub - AI Assistant Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Splash Screen */
+        .splash-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .splash-logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-30px); }
+            60% { transform: translateY(-15px); }
+        }
+
+        .splash-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .splash-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .get-started-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .get-started-btn:hover {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .search-bar {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            placeholder-color: rgba(255,255,255,0.7);
+        }
+
+        .search-bar::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        /* Category Grid */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 2px solid transparent;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .category-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .category-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        /* Bot List */
+        .bot-list {
+            padding: 20px;
+        }
+
+        .bot-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .bot-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .bot-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .bot-avatar {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .bot-info h3 {
+            color: #333;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .bot-description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Chat Screen */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            word-wrap: break-word;
+        }
+
+        .message.bot .message-bubble {
+            background: #667eea;
+            color: white;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message.user .message-bubble {
+            background: #e9ecef;
+            color: #333;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .chat-input-container {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #eee;
+            border-radius: 25px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            background: #667eea;
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: background 0.3s ease;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: #5a67d8;
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .chat-input:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+
+
+        /* Settings Screen */
+        .settings-container {
+            padding: 20px;
+        }
+
+        .settings-section {
+            margin-bottom: 30px;
+        }
+
+        .settings-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 25px;
+            background: #ccc;
+            border-radius: 25px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #667eea;
+        }
+
+        .toggle-slider {
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(25px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 3px;
+            padding: 10px 16px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.7);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Splash Screen -->
+        <div id="splash" class="splash-screen">
+            <div class="splash-logo">🤖</div>
+            <div class="splash-title">BotHub</div>
+            <div class="splash-subtitle">Your AI Assistant Collection</div>
+            <button class="get-started-btn" onclick="showHome()">Get Started</button>
+        </div>
+
+        <!-- Home Screen -->
+        <div id="home" class="hidden">
+            <div class="top-bar">
+                <div class="app-title">🤖 BotHub</div>
+                <input type="text" class="search-bar" placeholder="Search categories or bots..." id="searchInput">
+            </div>
+            <div class="category-grid" id="categoryGrid">
+                <!-- Categories will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Bot List Screen -->
+        <div id="botList" class="hidden">
+            <div class="top-bar">
+                <button class="back-btn" onclick="showHome()">←</button>
+                <div class="app-title" id="categoryTitle">Category Bots</div>
+            </div>
+            <div class="bot-list" id="botContainer">
+                <!-- Bots will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Chat Screen -->
+        <div id="chatScreen" class="hidden">
+            <div class="chat-container">
+                <div class="top-bar">
+                    <button class="back-btn" onclick="showBotList()">←</button>
+                    <div class="bot-avatar" id="chatBotAvatar">🤖</div>
+                    <div class="app-title" id="chatBotName">AI Assistant</div>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages will be populated by JavaScript -->
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="messageInput" placeholder="Type your message...">
+                    <button class="send-btn" onclick="sendMessage()">→</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings" class="hidden">
+            <div class="top-bar">
+                <button class="back-btn" onclick="showHome()">←</button>
+                <div class="app-title">Settings</div>
+            </div>
+            <div class="settings-container">
+                <div class="settings-section">
+                    <div class="settings-title">Preferences</div>
+                    <div class="settings-item">
+                        <span>Dark Mode</span>
+                        <div class="toggle-switch" onclick="toggleDarkMode(this)">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span>Notifications</span>
+                        <div class="toggle-switch active" onclick="toggleNotifications(this)">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span>Voice Input</span>
+                        <div class="toggle-switch" onclick="toggleVoice(this)">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-title">About</div>
+                    <div class="settings-item">
+                        <span>Version</span>
+                        <span>1.0.0</span>
+                    </div>
+                    <div class="settings-item">
+                        <span>Total Bots</span>
+                        <span>80</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        // App Data
+        const categories = [
+            { id: 'productivity', name: 'Productivity', icon: '🔧' },
+            { id: 'education', name: 'Education', icon: '📘' },
+            { id: 'health', name: 'Health', icon: '🩺' },
+            { id: 'finance', name: 'Finance', icon: '💼' },
+            { id: 'creative', name: 'Creative', icon: '🎨' },
+            { id: 'faith', name: 'Faith', icon: '✝️' },
+            { id: 'travel', name: 'Travel', icon: '🧳' },
+            { id: 'entertainment', name: 'Entertainment', icon: '🎮' },
+            { id: 'social', name: 'Social Media', icon: '📱' },
+            { id: 'time', name: 'Time Mgmt', icon: '⏳' },
+            { id: 'fitness', name: 'Fitness', icon: '💪' },
+            { id: 'cooking', name: 'Cooking', icon: '👨‍🍳' },
+            { id: 'parenting', name: 'Parenting', icon: '👶' },
+            { id: 'career', name: 'Career', icon: '💼' },
+            { id: 'relationships', name: 'Relationships', icon: '💕' },
+            { id: 'mindfulness', name: 'Mindfulness', icon: '🧘' },
+            { id: 'technology', name: 'Technology', icon: '💻' },
+            { id: 'language', name: 'Language', icon: '🗣️' },
+            { id: 'shopping', name: 'Shopping', icon: '🛍️' },
+            { id: 'pets', name: 'Pets', icon: '🐕' }
+        ];
+
+        const bots = {
+            productivity: [
+                { name: 'Task Master', icon: '✅', description: 'Helps organize and prioritize your daily tasks' },
+                { name: 'Focus Coach', icon: '🎯', description: 'Techniques to improve concentration and focus' },
+                { name: 'Meeting Prep', icon: '📊', description: 'Prepares agendas and meeting materials' },
+                { name: 'Goal Tracker', icon: '🏆', description: 'Tracks progress on personal and professional goals' }
+            ],
+            education: [
+                { name: 'Study Buddy', icon: '📚', description: 'Helps with homework and study techniques' },
+                { name: 'Math Tutor', icon: '🧮', description: 'Solves math problems step by step' },
+                { name: 'Essay Helper', icon: '✍️', description: 'Assists with writing and editing essays' },
+                { name: 'Science Explainer', icon: '🔬', description: 'Explains complex scientific concepts simply' }
+            ],
+            faith: [
+                { name: 'Prayer Bot', icon: '🙏', description: 'Guides you through daily prayers and meditation' },
+                { name: 'Bible Q&A Bot', icon: '📖', description: 'Answers questions about Biblical texts' },
+                { name: 'Devotional Bot', icon: '🕊️', description: 'Provides daily spiritual guidance' },
+                { name: 'Christian Quote Bot', icon: '✝️', description: 'Shares inspirational Christian quotes' }
+            ],
+            health: [
+                { name: 'Symptom Checker', icon: '🩺', description: 'Helps assess health symptoms (not medical advice)' },
+                { name: 'Nutrition Guide', icon: '🥗', description: 'Provides nutrition facts and healthy eating tips' },
+                { name: 'Mental Health', icon: '🧠', description: 'Offers mental wellness support and resources' },
+                { name: 'Sleep Coach', icon: '😴', description: 'Tips for better sleep hygiene and routines' }
+            ],
+            finance: [
+                { name: 'Budget Planner', icon: '💰', description: 'Helps create and manage personal budgets' },
+                { name: 'Investment Guide', icon: '📈', description: 'Basic investment education and strategies' },
+                { name: 'Expense Tracker', icon: '💳', description: 'Tracks spending and identifies saving opportunities' },
+                { name: 'Tax Helper', icon: '📊', description: 'Guidance on tax preparation and deductions' }
+            ]
+        };
+
+        // Fill remaining categories with sample bots
+        Object.keys(bots).forEach(category => {
+            if (!bots[category]) {
+                bots[category] = [
+                    { name: 'Assistant 1', icon: '🤖', description: 'General purpose AI assistant' },
+                    { name: 'Assistant 2', icon: '🎯', description: 'Specialized helper for this category' },
+                    { name: 'Assistant 3', icon: '💡', description: 'Smart advisor and consultant' },
+                    { name: 'Assistant 4', icon: '🚀', description: 'Advanced AI companion' }
+                ];
+            }
+        });
+
+        // Add bots for remaining categories
+        categories.forEach(cat => {
+            if (!bots[cat.id]) {
+                bots[cat.id] = [
+                    { name: `${cat.name} Assistant`, icon: cat.icon, description: `Specialized AI for ${cat.name.toLowerCase()}` },
+                    { name: `${cat.name} Coach`, icon: '🎯', description: `Personal coach for ${cat.name.toLowerCase()}` },
+                    { name: `${cat.name} Expert`, icon: '💡', description: `Expert advice on ${cat.name.toLowerCase()}` },
+                    { name: `${cat.name} Helper`, icon: '🚀', description: `Smart helper for ${cat.name.toLowerCase()}` }
+                ];
+            }
+        });
+
+        // State
+        let currentCategory = null;
+        let currentBot = null;
+        let chatHistory = [];
+
+        // Initialize app
+        function initApp() {
+            renderCategories();
+            setupEventListeners();
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = categories.map(cat => `
+                <div class="category-card" onclick="showCategory('${cat.id}')">
+                    <span class="category-icon">${cat.icon}</span>
+                    <div class="category-name">${cat.name}</div>
+                </div>
+            `).join('');
+        }
+
+        function showCategory(categoryId) {
+            currentCategory = categoryId;
+            const category = categories.find(c => c.id === categoryId);
+            document.getElementById('categoryTitle').textContent = `${category.name} Bots`;
+            
+            const botContainer = document.getElementById('botContainer');
+            botContainer.innerHTML = bots[categoryId].map(bot => `
+                <div class="bot-card" onclick="startChat('${bot.name}', '${bot.icon}')">
+                    <div class="bot-header">
+                        <div class="bot-avatar">${bot.icon}</div>
+                        <div class="bot-info">
+                            <h3>${bot.name}</h3>
+                        </div>
+                    </div>
+                    <div class="bot-description">${bot.description}</div>
+                </div>
+            `).join('');
+            
+            showScreen('botList');
+        }
+
+        function startChat(botName, botIcon) {
+            currentBot = { name: botName, icon: botIcon };
+            document.getElementById('chatBotName').textContent = botName;
+            document.getElementById('chatBotAvatar').textContent = botIcon;
+            
+            // Initialize chat with welcome message
+            chatHistory = [{
+                type: 'bot',
+                message: `Hello! I'm ${botName}. How can I help you today?`,
+                timestamp: new Date()
+            }];
+            
+            renderChat();
+            showScreen('chatScreen');
+        }
+
+        function renderChat() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = chatHistory.map(msg => `
+                <div class="message ${msg.type}">
+                    <div class="message-avatar">${msg.type === 'bot' ? currentBot.icon : '👤'}</div>
+                    <div class="message-bubble">${msg.message}</div>
+                </div>
+            `).join('');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            chatHistory.push({
+                type: 'user',
+                message: message,
+                timestamp: new Date()
+            });
+            
+            input.value = '';
+            input.disabled = true;
+            document.querySelector('.send-btn').disabled = true;
+            renderChat();
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Call AI API
+                const response = await callAIApi(message);
+                hideTypingIndicator();
+                
+                chatHistory.push({
+                    type: 'bot',
+                    message: response,
+                    timestamp: new Date()
+                });
+                renderChat();
+            } catch (error) {
+                hideTypingIndicator();
+                console.error('AI API Error:', error);
+                
+                // Fallback to simulated response
+                const fallbackResponse = generateBotResponse(message);
+                chatHistory.push({
+                    type: 'bot',
+                    message: fallbackResponse,
+                    timestamp: new Date()
+                });
+                renderChat();
+            } finally {
+                input.disabled = false;
+                document.querySelector('.send-btn').disabled = false;
+                input.focus();
+            }
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML += `
+                <div class="message bot" id="typingIndicator">
+                    <div class="message-avatar">${currentBot.icon}</div>
+                    <div class="message-bubble typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        async function callAIApi(message) {
+            // Determine API endpoint based on message content
+            const apiUrl = message.startsWith('/image') ? 
+                'https://backend.buildpicoapps.com/aero/run/image-generation-api?pk=v1-Z0FBQUFBQm5HUEtMSjJkakVjcF9IQ0M0VFhRQ0FmSnNDSHNYTlJSblE0UXo1Q3RBcjFPcl9YYy1OZUhteDZWekxHdWRLM1M1alNZTkJMWEhNOWd4S1NPSDBTWC12M0U2UGc9PQ==' : 
+                'https://backend.buildpicoapps.com/aero/run/llm-api?pk=v1-Z0FBQUFBQm5HUEtMSjJkakVjcF9IQ0M0VFhRQ0FmSnNDSHNYTlJSblE0UXo1Q3RBcjFPcl9YYy1OZUhteDZWekxHdWRLM1M1alNZTkJMWEhNOWd4S1NPSDBTWC12M0U2UGc9PQ==';
+            
+            // Create context-aware prompt based on current bot
+            const contextualPrompt = createContextualPrompt(message);
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt: contextualPrompt
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                return data.text;
+            } else {
+                throw new Error('API returned error status');
+            }
+        }
+
+        function createContextualPrompt(userMessage) {
+            if (!currentBot) return userMessage;
+            
+            // Create context based on bot type and category
+            const botContext = getBotContext(currentBot.name, currentCategory);
+            return `${botContext}\n\nUser: ${userMessage}\n\nAssistant:`;
+        }
+
+        function getBotContext(botName, category) {
+            const contexts = {
+                'Prayer Bot': 'You are a spiritual prayer guide. Help users with prayers, meditation, and spiritual guidance in a respectful, interfaith manner.',
+                'Bible Q&A Bot': 'You are a knowledgeable Biblical scholar. Answer questions about Biblical texts, stories, and teachings with accuracy and respect.',
+                'Devotional Bot': 'You are a daily devotional guide. Provide inspirational spiritual guidance, daily reflections, and uplifting messages.',
+                'Christian Quote Bot': 'You are a source of inspirational Christian quotes and wisdom. Share meaningful quotes and their context.',
+                'Task Master': 'You are a productivity expert. Help users organize tasks, set priorities, and improve their workflow efficiency.',
+                'Focus Coach': 'You are a focus and concentration coach. Provide techniques to improve attention and reduce distractions.',
+                'Study Buddy': 'You are an educational assistant. Help with homework, study techniques, and learning strategies.',
+                'Math Tutor': 'You are a patient math tutor. Explain mathematical concepts step-by-step and help solve problems.',
+                'Symptom Checker': 'You are a health information assistant. Provide general health information but always remind users to consult healthcare professionals for medical advice.',
+                'Budget Planner': 'You are a personal finance advisor. Help users create budgets, track expenses, and plan their financial goals.',
+                'Investment Guide': 'You are a financial education assistant. Provide basic investment information and financial literacy guidance.',
+                'Nutrition Guide': 'You are a nutrition expert. Provide healthy eating advice, nutritional information, and meal planning suggestions.'
+            };
+            
+            return contexts[botName] || `You are a helpful AI assistant specializing in ${category}. Provide helpful, accurate, and relevant information.`;
+        }
+
+        function generateContextualResponse(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+                return "Hello there! I'm excited to chat with you today.";
+            } else if (lowerMessage.includes('help')) {
+                return "I'm here to assist you. What specific area would you like help with?";
+            } else if (lowerMessage.includes('thank')) {
+                return "You're very welcome! I'm glad I could help.";
+            } else {
+                return "I appreciate you sharing that with me. Is there anything specific you'd like to explore further?";
+            }
+        }
+
+        function showScreen(screenId) {
+            // Hide all screens
+            document.querySelectorAll('.app-container > div').forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            
+            // Show selected screen
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function updateNavigation(activeScreen) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (activeScreen === 'home') {
+                document.querySelector('.nav-item').classList.add('active');
+            } else if (activeScreen === 'settings') {
+                document.querySelector('.nav-item:last-child').classList.add('active');
+            }
+        }
+
+        function showHome() {
+            showScreen('home');
+        }
+
+        function showBotList() {
+            if (currentCategory) {
+                showScreen('botList');
+            } else {
+                showHome();
+            }
+        }
+
+        function showSettings() {
+            showScreen('settings');
+        }
+
+        function showRecents() {
+            // Placeholder for recent chats functionality
+            alert('Recent chats feature coming soon!');
+        }
+
+        function showFavorites() {
+            // Placeholder for favorites functionality
+            alert('Favorites feature coming soon!');
+        }
+
+        function toggleDarkMode(toggle) {
+            toggle.classList.toggle('active');
+            // Dark mode implementation would go here
+        }
+
+        function toggleNotifications(toggle) {
+            toggle.classList.toggle('active');
+        }
+
+        function toggleVoice(toggle) {
+            toggle.classList.toggle('active');
+        }
+
+        function setupEventListeners() {
+            // Enter key for sending messages
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                filterCategories(query);
+            });
+        }
+
+        function filterCategories(query) {
+            const categoryCards = document.querySelectorAll('.category-card');
+            categoryCards.forEach(card => {
+                const categoryName = card.querySelector('.category-name').textContent.toLowerCase();
+                if (categoryName.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Auto-start the app after splash screen
+        setTimeout(() => {
+            showHome();
+        }, 3000);
+
+        // Initialize the app
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
